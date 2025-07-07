@@ -5,15 +5,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, FileText, Zap, Brain, Shield, Settings, Clock, Globe } from "lucide-react";
 import { useLocation } from "wouter";
+import { Logo } from "@/components/Logo";
 
 // Import company logos
-import cosmatrendsLogo from "@assets/image_1751913693391.png";
-import stellarwaveLogo from "@assets/image_1751913714866.png";
-import starketingLogo from "@assets/image_1751913740124.png";
-import cloudnestLogo from "@assets/image_1751913759089.png";
-import musebubblelLogo from "@assets/image_1751913804055.png";
-import darkpulseLogo from "@assets/image_1751913821292.png";
-import skybaseLogo from "@assets/image_1751913845914.png";
+import cosmatrendsLogo from "@assets/Screenshot 2025-07-08 001128_1751914852574.png";
+import stellarwaveLogo from "@assets/Screenshot 2025-07-08 001151_1751914852589.png";
+import starketingLogo from "@assets/Screenshot 2025-07-08 001213_1751914852591.png";
+import cloudnestLogo from "@assets/Screenshot 2025-07-08 001235_1751914852591.png";
+import musebubblelLogo from "@assets/Screenshot 2025-07-08 001316_1751914863917.png";
+import darkpulseLogo from "@assets/Screenshot 2025-07-08 001337_1751914863937.png";
+import skybaseLogo from "@assets/Screenshot 2025-07-08 001401_1751914863938.png";
 
 // Import feature images
 import organizedMemoryImg from "@assets/image_1751913580102.png";
@@ -100,8 +101,15 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#0B0B0B] text-white overflow-hidden">
+      {/* Header with Logo */}
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#0B0B0B]/80 backdrop-blur-md border-b border-gray-800/50">
+        <div className="max-w-7xl mx-auto px-6 py-4">
+          <Logo size="md" />
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden">
+      <section className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20">
         {/* Animated background gradient */}
         <div className="absolute inset-0 bg-gradient-to-br from-[#00FFA3]/10 via-transparent to-[#00B8FF]/10 animate-pulse" />
         
@@ -140,11 +148,15 @@ export default function Landing() {
             >
               <Button 
                 size="lg" 
-                onClick={() => setLocation('/onboarding')}
-                className="bg-gradient-to-r from-[#00FFA3] to-[#00B8FF] text-black font-bold px-12 py-6 text-xl hover:shadow-[0_0_40px_rgba(0,255,163,0.4)] transition-all duration-500 transform hover:scale-105 rounded-full"
+                onClick={() => window.location.href = '/api/login'}
+                className="bg-gradient-to-r from-[#00FFC6] to-[#00C0FF] text-white font-semibold px-7 py-3 text-base rounded-xl hover:shadow-[0_0_20px_rgba(0,255,198,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105"
+                style={{ 
+                  textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                  fontSize: '16px'
+                }}
               >
-                Sign Up Free – Automate Proposals with AI
-                <ArrowRight className="ml-3 h-6 w-6" />
+                Sign Up to Write with AeonRFP
+                <ArrowRight className="ml-3 h-5 w-5" />
               </Button>
             </motion.div>
           </motion.div>
@@ -156,7 +168,7 @@ export default function Landing() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 1, delay: 1 }}
           >
-            <p className="text-gray-500 mb-8 text-lg font-['Poppins',sans-serif]">Trusted by leading companies worldwide</p>
+            <p className="text-gray-500 mb-8 text-lg font-['Poppins',sans-serif]">Used by forward-thinking teams in stealth, growth, and scale</p>
             <div className="relative">
               <div className="flex animate-scroll space-x-12 items-center">
                 {[...companyLogos, ...companyLogos].map((logo, index) => (
@@ -171,7 +183,7 @@ export default function Landing() {
                     <img 
                       src={logo.src} 
                       alt={logo.name}
-                      className="h-8 md:h-12 w-auto object-contain filter brightness-0 invert"
+                      className="h-8 md:h-12 w-auto object-contain"
                     />
                   </motion.div>
                 ))}
@@ -337,11 +349,15 @@ export default function Landing() {
             
             <Button 
               size="lg" 
-              onClick={() => setLocation('/onboarding')}
-              className="bg-gradient-to-r from-[#00FFA3] to-[#00B8FF] text-black font-bold px-12 py-6 text-xl hover:shadow-[0_0_50px_rgba(0,255,163,0.5)] transition-all duration-500 transform hover:scale-105 rounded-full"
+              onClick={() => window.location.href = '/api/login'}
+              className="bg-gradient-to-r from-[#00FFC6] to-[#00C0FF] text-white font-semibold px-7 py-3 text-base rounded-xl hover:shadow-[0_0_20px_rgba(0,255,198,0.3)] transition-all duration-300 transform hover:-translate-y-0.5"
+              style={{ 
+                textShadow: '0 1px 2px rgba(0,0,0,0.5)',
+                fontSize: '16px'
+              }}
             >
               Get Started Free
-              <ArrowRight className="ml-3 h-6 w-6" />
+              <ArrowRight className="ml-3 h-5 w-5" />
             </Button>
           </motion.div>
         </div>

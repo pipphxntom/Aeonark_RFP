@@ -111,13 +111,23 @@ Changelog:
 
 ## Recent Changes
 
-The application has been significantly enhanced with two major new features:
+The application has been significantly enhanced with several major features and a complete homepage redesign:
 
 1. **AI Proposal Editor UI**: A comprehensive workspace allowing users to edit proposals section by section, with AI-powered regeneration capabilities and a memory engine that suggests reusable clauses from past successful proposals.
 
 2. **Analytics Dashboard**: A mission control interface providing real-time insights into proposal performance, win rates, time savings, and usage analytics with interactive charts and conversion funnels.
 
-Both features are fully integrated with the existing authentication system and include proper database storage, API endpoints, and futuristic UI styling consistent with the space-themed design.
+3. **Complete Homepage Redesign (July 7, 2025)**: 
+   - Implemented full dark theme (#0B0B0B) with neon green/blue gradients (#00FFA3 to #00B8FF)
+   - Added AeonRFP logo with document icon and gradient text
+   - Created "Win More Than Just Business" section with 5 animated features
+   - Integrated floating company logos with smooth scroll animations
+   - Added "Latest from AeonRFP" blog section with glassmorphic cards
+   - Implemented scroll-triggered animations using AOS and Framer Motion
+   - Updated CTA buttons with new gradient styling and hover effects
+   - Used Inter/Poppins typography for modern, clean appearance
+
+All features are fully integrated with the existing authentication system and include proper database storage, API endpoints, and consistent futuristic UI styling.
 
 ## User Preferences
 

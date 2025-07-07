@@ -22,13 +22,24 @@ function Router() {
 
   return (
     <Switch>
-      {!isAuthenticated ? (
-        <Route path="/" component={Landing} />
-      ) : (user as any)?.isOnboardingComplete ? (
-        <Route path="/" component={Home} />
-      ) : (
-        <Route path="/" component={Onboarding} />
-      )}
+      <Route path="/">
+        {!isAuthenticated ? (
+          <Landing />
+        ) : (user as any)?.isOnboardingComplete ? (
+          <Home />
+        ) : (
+          <Onboarding />
+        )}
+      </Route>
+      <Route path="/login">
+        <Landing />
+      </Route>
+      <Route path="/onboarding">
+        {isAuthenticated ? <Onboarding /> : <Landing />}
+      </Route>
+      <Route path="/home">
+        {isAuthenticated && (user as any)?.isOnboardingComplete ? <Home /> : <Landing />}
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );
