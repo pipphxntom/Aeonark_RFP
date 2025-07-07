@@ -110,18 +110,36 @@ export async function setupAuth(app: Express) {
     }
   } catch (error) {
     console.warn("Failed to setup OAuth strategies, using mock auth:", error.message);
-    // For development, we'll add a simple mock route
-    app.get("/api/login", (req, res) => {
-      // Mock successful login - create a demo user session
-      const mockUser = {
-        claims: {
-          sub: "demo-user-123",
-          email: "demo@aeonrfp.com",
-          name: "Demo User"
-        }
-      };
-      req.session.user = mockUser;
-      res.redirect("/");
+    // For development, we'll add a simple mock route that creates a proper user session
+    app.get("/api/login", async (req, res) => {
+      try {
+        // Mock successful login - create a demo user session
+        const mockUser = {
+          claims: {
+            sub: "demo-user-123",
+            email: "demo@aeonrfp.com",
+            name: "Demo User"
+          }
+        };
+        
+        // Create or update the user in the database
+        await storage.upsertUser({
+          id: mockUser.claims.sub,
+          email: mockUser.claims.email,
+          name: mockUser.claims.name,
+          isOnboardingComplete: false,
+          industry: "",
+          companySize: "",
+          servicesOffered: [],
+          tonePreference: "professional"
+        });
+        
+        req.session.user = mockUser;
+        res.redirect("/");
+      } catch (error) {
+        console.error("Error creating mock user:", error);
+        res.status(500).json({ message: "Failed to create demo user" });
+      }
     });
   }
 
@@ -155,9 +173,15 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
+  // Handle mock authentication for development
+  if (req.session?.user) {
+    req.user = req.session.user;
+    return next();
+  }
+
   const user = req.user as any;
 
-  if (!req.isAuthenticated() || !user.expires_at) {
+  if (!req.isAuthenticated() || !user?.expires_at) {
     return res.status(401).json({ message: "Unauthorized" });
   }
 
