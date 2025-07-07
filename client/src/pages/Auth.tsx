@@ -64,7 +64,7 @@ export default function Auth() {
     onSuccess: (response: any) => {
       setEmail(emailForm.getValues('email'));
       setStep('otp');
-      
+
       // In development, show OTP if email failed
       if (response.otp) {
         setDevOtp(response.otp);
@@ -146,7 +146,7 @@ export default function Auth() {
     <div className="min-h-screen bg-[#0B0B0B] text-white flex items-center justify-center overflow-hidden">
       {/* Animated background gradient */}
       <div className="absolute inset-0 bg-gradient-to-br from-[#00FFA3]/10 via-transparent to-[#00B8FF]/10 animate-pulse" />
-      
+
       {/* Grid pattern overlay */}
       <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.15)_1px,transparent_0)] bg-[length:40px_40px]" />
 
@@ -256,7 +256,7 @@ export default function Auth() {
                           />
                         </div>
                       </div>
-                      
+
                       {/* Development OTP Display */}
                       {devOtp && (
                         <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
