@@ -4,7 +4,8 @@ if (!process.env.RESEND_API_KEY) {
   console.warn("RESEND_API_KEY not found, email functionality will be disabled");
 }
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Only initialize Resend if API key is available
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 interface EmailParams {
   to: string;
@@ -15,7 +16,7 @@ interface EmailParams {
 
 export async function sendEmail(params: EmailParams): Promise<boolean> {
   try {
-    if (!process.env.RESEND_API_KEY) {
+    if (!process.env.RESEND_API_KEY || !resend) {
       console.warn("Cannot send email: RESEND_API_KEY not configured");
       return false;
     }
