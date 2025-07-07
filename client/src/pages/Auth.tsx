@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { useMutation } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
@@ -30,6 +30,7 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [devOtp, setDevOtp] = useState('');
   const { toast } = useToast();
+  const otpInputRef = useRef<HTMLInputElement>(null);
 
   const emailForm = useForm<EmailForm>({
     resolver: zodResolver(emailSchema),
@@ -43,7 +44,18 @@ export default function Auth() {
     defaultValues: {
       otp: '',
     },
+    mode: 'onChange',
   });
+
+  // Focus and clear OTP input when step changes to OTP
+  useEffect(() => {
+    if (step === 'otp') {
+      otpForm.setValue('otp', ''); // Clear the field
+      setTimeout(() => {
+        otpInputRef.current?.focus();
+      }, 100);
+    }
+  }, [step, otpForm]);
 
   const sendOTPMutation = useMutation({
     mutationFn: async (data: EmailForm) => {
@@ -226,15 +238,20 @@ export default function Auth() {
                           <FormControl>
                             <div className="flex justify-center">
                               <Input
+                                ref={otpInputRef}
                                 type="text"
                                 maxLength={6}
-                                placeholder="Enter 6-digit code"
+                                placeholder=""
                                 value={field.value}
                                 onChange={(e) => {
                                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
                                   field.onChange(value);
                                 }}
-                                className="text-center text-2xl font-mono tracking-widest bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-[#00FFA3]"
+                                onFocus={(e) => e.target.select()}
+                                autoComplete="one-time-code"
+                                inputMode="numeric"
+                                pattern="[0-9]*"
+                                className="text-center text-2xl font-mono tracking-widest bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-[#00FFA3] focus:outline-none"
                               />
                             </div>
                           </FormControl>
