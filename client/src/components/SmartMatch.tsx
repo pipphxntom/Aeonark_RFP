@@ -21,8 +21,7 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const { toast } = useToast();
 
-  // Debug logs
-  console.log('SmartMatch props:', { rfps, selectedRfpId, analysisComplete });
+
 
   const { data: smartMatch, isLoading: isLoadingMatch } = useQuery({
     queryKey: ['/api/rfps', selectedRfpId, 'smartmatch'],
