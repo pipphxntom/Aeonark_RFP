@@ -5,6 +5,7 @@ import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertRfpSchema, insertSmartMatchSchema, insertProposalSchema } from "@shared/schema";
 import { generateProposal, analyzeRfpCompatibility, regenerateSection } from "./services/openai";
 import { processUploadedFile } from "./services/fileProcessor";
+import { sendEmail, generateOtpEmail } from "./services/emailService";
 import multer from "multer";
 import path from "path";
 
@@ -41,8 +42,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate 6-digit OTP
       const otp = Math.floor(100000 + Math.random() * 900000).toString();
       
-      // In development, log the OTP instead of sending email
-      console.log(`📧 OTP for ${email}: ${otp}`);
+      // Send email with OTP
+      let emailSent = false;
+      if (process.env.RESEND_API_KEY) {
+        emailSent = await sendEmail({
+          to: email,
+          subject: "Your AeonRFP Login Code",
+          html: generateOtpEmail(otp)
+        });
+      }
+      
+      if (!emailSent) {
+        // Fallback: log OTP in development
+        console.log(`📧 OTP for ${email}: ${otp} (Email service unavailable)`);
+      }
       
       // Store OTP in session (in production, use Redis or database)
       req.session.otpData = {
@@ -54,9 +67,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({ 
         success: true, 
-        message: "OTP sent successfully",
-        // In development, include OTP in response for testing
-        ...(process.env.NODE_ENV === 'development' && { otp })
+        message: emailSent ? "OTP sent to your email" : "OTP generated (check server logs)",
+        // In development, include OTP in response for testing when email fails
+        ...(process.env.NODE_ENV === 'development' && !emailSent && { otp })
       });
     } catch (error) {
       console.error("Error sending OTP:", error);
@@ -78,8 +91,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Invalid OTP session" });
       }
       
-      // Check if OTP has expired (5 minutes)
-      if (Date.now() - otpData.createdAt > 5 * 60 * 1000) {
+      // Check if OTP has expired (10 minutes)
+      if (Date.now() - otpData.createdAt > 10 * 60 * 1000) {
         delete req.session.otpData;
         return res.status(400).json({ message: "OTP has expired" });
       }
