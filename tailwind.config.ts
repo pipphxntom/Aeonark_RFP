@@ -51,6 +51,12 @@ export default {
           "4": "var(--chart-4)",
           "5": "var(--chart-5)",
         },
+        // Custom colors for the futuristic theme
+        'neon-green': 'var(--neon-green)',
+        'neon-cyan': 'var(--neon-cyan)',
+        'deep-black': 'var(--deep-black)',
+        'dark-gray': 'var(--dark-gray)',
+        'space-gray': 'var(--space-gray)',
         sidebar: {
           DEFAULT: "var(--sidebar-background)",
           foreground: "var(--sidebar-foreground)",
@@ -79,10 +85,35 @@ export default {
             height: "0",
           },
         },
+        "typing": {
+          "from": { "width": "0" },
+          "to": { "width": "100%" }
+        },
+        "blink": {
+          "0%, 50%": { "opacity": "1" },
+          "51%, 100%": { "opacity": "0" }
+        },
+        "glow": {
+          "from": { "box-shadow": "0 0 20px var(--neon-green)" },
+          "to": { "box-shadow": "0 0 40px var(--neon-green), 0 0 60px var(--neon-green)" }
+        },
+        "float": {
+          "0%, 100%": { "transform": "translateY(0px)" },
+          "50%": { "transform": "translateY(-10px)" }
+        },
+        "scroll-left": {
+          "0%": { "transform": "translateX(100%)" },
+          "100%": { "transform": "translateX(-100%)" }
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "typing": "typing 3.5s steps(40, end)",
+        "blink": "blink 1s infinite",
+        "glow": "glow 2s ease-in-out infinite alternate",
+        "float": "float 3s ease-in-out infinite",
+        "scroll-left": "scroll-left 20s linear infinite",
       },
     },
   },
