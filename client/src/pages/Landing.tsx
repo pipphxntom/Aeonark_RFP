@@ -43,12 +43,8 @@ export default function Landing() {
         transition={{ duration: 1 }}
       >
         <div className="mb-8">
-          <h1 className="text-6xl md:text-8xl font-bold mb-4" style={{ fontFamily: 'SF Mono, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
-            <TypingAnimation
-              text="AI that Wins RFPs. At 10x Speed."
-              className="terminal-cursor"
-              speed={100}
-            />
+          <h1 className="text-6xl md:text-8xl font-bold mb-4 font-sf-mono">
+            AI that Wins RFPs. At 10x Speed.
           </h1>
           <motion.p 
             className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto"
@@ -61,25 +57,16 @@ export default function Landing() {
         </div>
         
         {/* CTA Button */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ 
-            opacity: showButton ? 1 : 0, 
-            scale: showButton ? 1 : 0.8 
-          }}
-          transition={{ duration: 0.5 }}
-        >
-          {showButton && (
-            <Button
-              onClick={() => setShowLoginModal(true)}
-              className="bg-gradient-to-r from-neon-green to-neon-cyan text-black px-8 py-6 rounded-lg text-xl font-bold hover:animate-glow transition-all duration-300 transform hover:scale-105"
-              size="lg"
-            >
-              <Rocket className="mr-2 h-5 w-5" />
-              Sign Up Free – Automate Proposals with AI
-            </Button>
-          )}
-        </motion.div>
+        <div className="mt-8">
+          <Button
+            onClick={() => setShowLoginModal(true)}
+            className="bg-gradient-to-r from-neon-green to-neon-cyan text-black px-8 py-6 rounded-lg text-xl font-bold hover:opacity-90 transition-all duration-300"
+            size="lg"
+          >
+            <Rocket className="mr-2 h-5 w-5" />
+            Sign Up Free – Automate Proposals with AI
+          </Button>
+        </div>
       </motion.div>
       
       {/* Company Logo Carousel */}
