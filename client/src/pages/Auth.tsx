@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Logo } from "@/components/Logo";
@@ -225,20 +225,17 @@ export default function Auth() {
                           </FormLabel>
                           <FormControl>
                             <div className="flex justify-center">
-                              <InputOTP 
-                                maxLength={6} 
+                              <Input
+                                type="text"
+                                maxLength={6}
+                                placeholder="Enter 6-digit code"
                                 value={field.value}
-                                onChange={(value) => field.onChange(value)}
-                              >
-                                <InputOTPGroup>
-                                  <InputOTPSlot index={0} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                  <InputOTPSlot index={1} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                  <InputOTPSlot index={2} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                  <InputOTPSlot index={3} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                  <InputOTPSlot index={4} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                  <InputOTPSlot index={5} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
-                                </InputOTPGroup>
-                              </InputOTP>
+                                onChange={(e) => {
+                                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                  field.onChange(value);
+                                }}
+                                className="text-center text-2xl font-mono tracking-widest bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-[#00FFA3]"
+                              />
                             </div>
                           </FormControl>
                           <FormMessage />
