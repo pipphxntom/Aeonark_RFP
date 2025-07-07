@@ -169,7 +169,7 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
             {integrationCards.map((integration) => {
               const Icon = integration.icon;
               const isConnected = integrations[integration.key];
-              const isConnecting = isConnecting === integration.key;
+              const isConnectingThisIntegration = isConnecting === integration.key;
 
               return (
                 <motion.div
@@ -209,14 +209,14 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
                       </ul>
                       <Button
                         onClick={() => handleConnect(integration.key)}
-                        disabled={isConnected || isConnecting}
+                        disabled={isConnected || isConnectingThisIntegration}
                         className={`w-full ${
                           isConnected 
                             ? 'bg-gray-700 text-gray-400 cursor-not-allowed' 
                             : 'bg-gradient-to-r from-[#00FFA3] to-[#00B8FF] hover:shadow-lg'
                         }`}
                       >
-                        {isConnecting ? (
+                        {isConnectingThisIntegration ? (
                           <>
                             <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                             Connecting...

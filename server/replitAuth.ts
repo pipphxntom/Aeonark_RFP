@@ -160,14 +160,26 @@ export async function setupAuth(app: Express) {
     })(req, res, next);
   });
 
-  app.get("/api/logout", (req, res) => {
-    req.logout(() => {
-      res.redirect(
-        client.buildEndSessionUrl(config, {
-          client_id: process.env.REPL_ID!,
-          post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
-        }).href
-      );
+  app.get("/api/logout", async (req, res) => {
+    req.logout(async () => {
+      try {
+        const config = await getOidcConfig();
+        // Only try to build end session URL if we have a proper OAuth config
+        if (config && typeof config === 'object' && 'authorization_endpoint' in config && !config.authorization_endpoint.includes('mock')) {
+          res.redirect(
+            client.buildEndSessionUrl(config, {
+              client_id: process.env.REPL_ID!,
+              post_logout_redirect_uri: `${req.protocol}://${req.hostname}`,
+            }).href
+          );
+        } else {
+          // For mock/development mode, just redirect to home
+          res.redirect('/');
+        }
+      } catch (error) {
+        console.warn("Error during logout, redirecting to home:", error.message);
+        res.redirect('/');
+      }
     });
   });
 }
