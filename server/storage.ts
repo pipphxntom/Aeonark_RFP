@@ -6,6 +6,8 @@ import {
   companyTemplates,
   memoryClauses,
   analyticsEvents,
+  oauthTokens,
+  emailMonitoring,
   type User,
   type UpsertUser,
   type InsertRfp,
@@ -20,6 +22,10 @@ import {
   type MemoryClause,
   type InsertAnalyticsEvent,
   type AnalyticsEvent,
+  type InsertOauthToken,
+  type OauthToken,
+  type InsertEmailMonitoring,
+  type EmailMonitoring,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, sql, count } from "drizzle-orm";
@@ -69,6 +75,17 @@ export interface IStorage {
     avgScore: number;
     timeSaved: number;
   }>;
+  
+  // OAuth operations
+  upsertOauthToken(token: InsertOauthToken): Promise<OauthToken>;
+  getOauthToken(userId: string, provider: string): Promise<OauthToken | undefined>;
+  refreshOauthToken(userId: string, provider: string, newTokens: Partial<InsertOauthToken>): Promise<OauthToken>;
+  deleteOauthToken(userId: string, provider: string): Promise<void>;
+  
+  // Email monitoring operations
+  createEmailMonitoring(monitoring: InsertEmailMonitoring): Promise<EmailMonitoring>;
+  getEmailMonitoring(userId: string, provider?: string): Promise<EmailMonitoring[]>;
+  markEmailProcessed(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -279,6 +296,92 @@ export class DatabaseStorage implements IStorage {
       avgScore: Math.round(avgScore * 100) / 100,
       timeSaved,
     };
+  }
+
+  // OAuth operations
+  async upsertOauthToken(token: InsertOauthToken): Promise<OauthToken> {
+    const existing = await db
+      .select()
+      .from(oauthTokens)
+      .where(and(eq(oauthTokens.userId, token.userId), eq(oauthTokens.provider, token.provider)))
+      .limit(1);
+
+    if (existing.length > 0) {
+      const [updated] = await db
+        .update(oauthTokens)
+        .set({
+          ...token,
+          updatedAt: new Date()
+        })
+        .where(eq(oauthTokens.id, existing[0].id))
+        .returning();
+      return updated;
+    } else {
+      const [created] = await db
+        .insert(oauthTokens)
+        .values(token)
+        .returning();
+      return created;
+    }
+  }
+
+  async getOauthToken(userId: string, provider: string): Promise<OauthToken | undefined> {
+    const [token] = await db
+      .select()
+      .from(oauthTokens)
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, provider)))
+      .limit(1);
+    
+    return token;
+  }
+
+  async refreshOauthToken(userId: string, provider: string, newTokens: Partial<InsertOauthToken>): Promise<OauthToken> {
+    const [updated] = await db
+      .update(oauthTokens)
+      .set({
+        ...newTokens,
+        updatedAt: new Date()
+      })
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, provider)))
+      .returning();
+    
+    return updated;
+  }
+
+  async deleteOauthToken(userId: string, provider: string): Promise<void> {
+    await db
+      .delete(oauthTokens)
+      .where(and(eq(oauthTokens.userId, userId), eq(oauthTokens.provider, provider)));
+  }
+
+  // Email monitoring operations
+  async createEmailMonitoring(monitoring: InsertEmailMonitoring): Promise<EmailMonitoring> {
+    const [created] = await db
+      .insert(emailMonitoring)
+      .values(monitoring)
+      .returning();
+    
+    return created;
+  }
+
+  async getEmailMonitoring(userId: string, provider?: string): Promise<EmailMonitoring[]> {
+    const query = db
+      .select()
+      .from(emailMonitoring)
+      .where(eq(emailMonitoring.userId, userId));
+
+    if (provider) {
+      query.where(and(eq(emailMonitoring.userId, userId), eq(emailMonitoring.provider, provider)));
+    }
+
+    return await query.orderBy(desc(emailMonitoring.createdAt));
+  }
+
+  async markEmailProcessed(id: number): Promise<void> {
+    await db
+      .update(emailMonitoring)
+      .set({ processed: true })
+      .where(eq(emailMonitoring.id, id));
   }
 }
 

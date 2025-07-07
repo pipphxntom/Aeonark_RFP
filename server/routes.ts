@@ -589,6 +589,91 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // OAuth Integration Routes
+  app.post("/api/oauth/connect", isAuthenticated, async (req, res) => {
+    try {
+      const { provider } = req.body;
+      const userId = req.user!.claims.sub;
+      
+      if (!['gmail', 'slack'].includes(provider)) {
+        return res.status(400).json({ error: "Invalid provider" });
+      }
+
+      const { oauthProviders } = await import('./services/oauthService');
+      const authUrl = oauthProviders[provider as keyof typeof oauthProviders].getAuthUrl(userId);
+      
+      res.json({ authUrl });
+    } catch (error) {
+      console.error("Error initiating OAuth:", error);
+      res.status(500).json({ error: "Failed to initiate OAuth" });
+    }
+  });
+
+  app.get("/api/auth/:provider/callback", async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const { code, state } = req.query;
+
+      if (!code || !state) {
+        return res.status(400).send("Missing code or state parameter");
+      }
+
+      if (!['google', 'slack'].includes(provider)) {
+        return res.status(400).send("Invalid provider");
+      }
+
+      const { oauthProviders } = await import('./services/oauthService');
+      const providerName = provider === 'google' ? 'gmail' : provider;
+      const token = await oauthProviders[providerName as keyof typeof oauthProviders].exchangeCodeForTokens(code as string, state as string);
+      
+      // Redirect to frontend with success
+      res.redirect(`${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/?connected=${provider}`);
+    } catch (error) {
+      console.error("OAuth callback error:", error);
+      res.redirect(`${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/?error=oauth_failed`);
+    }
+  });
+
+  app.get("/api/oauth/status", isAuthenticated, async (req, res) => {
+    try {
+      const userId = req.user!.claims.sub;
+      
+      const gmailToken = await storage.getOauthToken(userId, 'gmail');
+      const slackToken = await storage.getOauthToken(userId, 'slack');
+      
+      res.json({
+        gmail: {
+          connected: !!gmailToken,
+          email: gmailToken?.tokenData?.email || null
+        },
+        slack: {
+          connected: !!slackToken,
+          team: slackToken?.tokenData?.team?.name || null
+        }
+      });
+    } catch (error) {
+      console.error("Error getting OAuth status:", error);
+      res.status(500).json({ error: "Failed to get OAuth status" });
+    }
+  });
+
+  app.delete("/api/oauth/disconnect/:provider", isAuthenticated, async (req, res) => {
+    try {
+      const { provider } = req.params;
+      const userId = req.user!.claims.sub;
+      
+      if (!['gmail', 'slack'].includes(provider)) {
+        return res.status(400).json({ error: "Invalid provider" });
+      }
+
+      await storage.deleteOauthToken(userId, provider);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error disconnecting OAuth:", error);
+      res.status(500).json({ error: "Failed to disconnect OAuth" });
+    }
+  });
+
   // Public sharing route (no auth required)
   app.get('/share/:token', async (req, res) => {
     try {

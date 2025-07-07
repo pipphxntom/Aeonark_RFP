@@ -129,6 +129,35 @@ export const analyticsEvents = pgTable("analytics_events", {
   timestamp: timestamp("timestamp").defaultNow(),
 });
 
+// OAuth tokens for external integrations
+export const oauthTokens = pgTable("oauth_tokens", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(), // "gmail", "slack", "outlook"
+  accessToken: text("access_token").notNull(),
+  refreshToken: text("refresh_token"),
+  expiresAt: timestamp("expires_at"),
+  scope: text("scope"),
+  tokenData: jsonb("token_data"), // Additional provider-specific data
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Email monitoring for RFP detection
+export const emailMonitoring = pgTable("email_monitoring", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(),
+  messageId: varchar("message_id").notNull(),
+  subject: text("subject"),
+  sender: text("sender"),
+  attachmentCount: integer("attachment_count").default(0),
+  isRfp: boolean("is_rfp").default(false),
+  matchScore: integer("match_score"),
+  processed: boolean("processed").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   rfps: many(rfps),
@@ -136,6 +165,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   templates: many(companyTemplates),
   memoryClauses: many(memoryClauses),
   analyticsEvents: many(analyticsEvents),
+  oauthTokens: many(oauthTokens),
+  emailMonitoring: many(emailMonitoring),
 }));
 
 export const rfpsRelations = relations(rfps, ({ one, many }) => ({
@@ -194,6 +225,20 @@ export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => 
   }),
 }));
 
+export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [oauthTokens.userId],
+    references: [users.id],
+  }),
+}));
+
+export const emailMonitoringRelations = relations(emailMonitoring, ({ one }) => ({
+  user: one(users, {
+    fields: [emailMonitoring.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRfpSchema = createInsertSchema(rfps).omit({ id: true, createdAt: true, updatedAt: true });
@@ -202,6 +247,8 @@ export const insertProposalSchema = createInsertSchema(proposals).omit({ id: tru
 export const insertCompanyTemplateSchema = createInsertSchema(companyTemplates).omit({ id: true, createdAt: true });
 export const insertMemoryClauseSchema = createInsertSchema(memoryClauses).omit({ id: true, createdAt: true });
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({ id: true, timestamp: true });
+export const insertOauthTokenSchema = createInsertSchema(oauthTokens).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertEmailMonitoringSchema = createInsertSchema(emailMonitoring).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -218,3 +265,7 @@ export type InsertMemoryClause = z.infer<typeof insertMemoryClauseSchema>;
 export type MemoryClause = typeof memoryClauses.$inferSelect;
 export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
 export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;
+export type InsertOauthToken = z.infer<typeof insertOauthTokenSchema>;
+export type OauthToken = typeof oauthTokens.$inferSelect;
+export type InsertEmailMonitoring = z.infer<typeof insertEmailMonitoringSchema>;
+export type EmailMonitoring = typeof emailMonitoring.$inferSelect;

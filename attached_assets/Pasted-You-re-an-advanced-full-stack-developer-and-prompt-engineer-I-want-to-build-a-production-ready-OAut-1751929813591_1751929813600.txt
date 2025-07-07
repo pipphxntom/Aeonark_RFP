@@ -1,0 +1,70 @@
+You're an advanced full-stack developer and prompt engineer. I want to build a production-ready OAuth integration system in Replit that connects Gmail, Slack, and Outlook into my app "AeonRFP" for auto-fetching RFP documents and triggering proposal automation.
+
+Your task is to implement both frontend and backend:
+
+1. 💡 Purpose:
+- When the user clicks "Connect Gmail" / "Connect Slack" / "Connect Outlook", they should authenticate via OAuth2 popup
+- On success, the system must persist tokens even if the Replit project is forked/cloned
+- The backend should then monitor new email/slack messages for attachments (RFP docs), extract their content, and pass them to an AI engine (e.g. DeepSeek or OpenRouter) for scoring and draft generation
+
+---
+
+### ✅ FRONTEND REQUIREMENTS:
+1. Show a “Connect Gmail / Slack / Outlook” button with modern UI (Neon hover, animated glow)
+2. When clicked, trigger the OAuth popup flow using the correct provider
+3. After success, show a glowing “Connected ✅” badge and platform status
+4. Display a log section showing:
+   - New RFP detected (file name)
+   - Match Score
+   - Draft ready toast notification
+5. All frontend should be React-based or using Vite/Next.js (with hooks, useState, useEffect)
+
+---
+
+### ⚙️ BACKEND REQUIREMENTS:
+1. Use Express.js (or Flask if Python) and set up secure API routes
+2. Implement **OAuth2 flow** for:
+   - Gmail (Google API with scopes for email + attachments)
+   - Slack (Events API + scopes for file_shared/message)
+   - Outlook (Graph API with messages.read, files.read)
+3. Store the following **securely and persistently**:
+   - access_token
+   - refresh_token
+   - expiry
+   - user_id (link to current AeonRFP user)
+4. Avoid ephemeral memory. Store tokens in Replit database or Supabase.
+5. After OAuth success, set up a webhook or polling watcher:
+   - For Gmail: use `watch` endpoint and history ID tracker
+   - For Slack: setup a webhook via Slack Events API
+   - For Outlook: use Graph `/me/messages` subscription
+6. On new attachment:
+   - Parse email/message metadata
+   - Extract `.pdf`, `.docx`, `.txt`
+   - Send content to LLM (DeepSeek/chat or OpenRouter)
+   - Log SmartMatch score and generate draft
+
+---
+
+### 🔐 SECURITY REQUIREMENTS:
+- Use JWT or session-based user auth for route protection
+- Encrypt OAuth tokens at rest
+- Add logic to revoke tokens
+- Revalidate every 55 min with refresh flow
+- Ensure cloned projects don’t break OAuth by binding storage to stable user ID
+
+---
+
+### 🧪 TESTING:
+- Add sample RFP email in Gmail
+- Upload dummy .docx in Slack
+- Verify AI triggers and displays match score + draft proposal UI
+
+---
+
+Final Output:
+- Full working integration
+- All tokens and logic persist after clone
+- Replit-ready and reusable backend + React frontend
+- Optional: webhook debug route (POST `/api/test-webhook`)
+
+Start building this in my current Replit workspace. Do not use temporary or fake data. Ask for credentials where needed, and save configuration in `.env` and secrets manager.
