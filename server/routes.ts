@@ -86,6 +86,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const otpData = req.session.otpData;
+
       
       if (!otpData || otpData.email !== email) {
         return res.status(400).json({ message: "Invalid OTP session" });
@@ -122,12 +123,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.upsertUser({
         id: mockUser.claims.sub,
         email: mockUser.claims.email,
-        name: mockUser.claims.name,
-        isOnboardingComplete: false,
-        industry: "",
-        companySize: "",
+        firstName: mockUser.claims.name,
+        lastName: null,
+        profileImageUrl: null,
+        industry: null,
+        companySize: null,
         servicesOffered: [],
-        tonePreference: "professional"
+        tonePreference: "professional",
+        isOnboardingComplete: false
       });
       
       // Create session
