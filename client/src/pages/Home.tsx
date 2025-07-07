@@ -1,0 +1,351 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileUpload } from "@/components/ui/file-upload";
+import { SmartMatch } from "@/components/SmartMatch";
+import { AIGeneration } from "@/components/AIGeneration";
+import { Sidebar } from "@/components/ui/sidebar";
+import { SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { useAuth } from "@/hooks/useAuth";
+import { 
+  Upload, 
+  Search, 
+  Database, 
+  Wand2, 
+  TrendingUp, 
+  Clock, 
+  FileText,
+  BarChart3,
+  Home as HomeIcon,
+  LogOut,
+  Settings
+} from "lucide-react";
+
+export default function Home() {
+  const { user } = useAuth();
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [showSmartMatch, setShowSmartMatch] = useState(false);
+  const [showAIGeneration, setShowAIGeneration] = useState(false);
+  const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
+
+  const { data: rfps = [] } = useQuery({
+    queryKey: ['/api/rfps'],
+  });
+
+  const { data: proposals = [] } = useQuery({
+    queryKey: ['/api/proposals'],
+  });
+
+  const handleUploadSuccess = () => {
+    setShowUploadModal(false);
+    // Refetch RFPs after upload
+    window.location.reload();
+  };
+
+  const handleSmartMatchComplete = (rfpId: number) => {
+    setSelectedRfpId(rfpId);
+    setShowSmartMatch(false);
+    setShowAIGeneration(true);
+  };
+
+  const handleLogout = () => {
+    window.location.href = '/api/logout';
+  };
+
+  const sidebarItems = [
+    { 
+      icon: HomeIcon, 
+      label: "Dashboard", 
+      active: true 
+    },
+    { 
+      icon: Upload, 
+      label: "Upload RFP", 
+      onClick: () => setShowUploadModal(true) 
+    },
+    { 
+      icon: Search, 
+      label: "SmartMatch", 
+      onClick: () => setShowSmartMatch(true) 
+    },
+    { 
+      icon: FileText, 
+      label: "Drafts" 
+    },
+    { 
+      icon: Database, 
+      label: "Memory Bank" 
+    },
+    { 
+      icon: Settings, 
+      label: "Settings" 
+    },
+    { 
+      icon: LogOut, 
+      label: "Logout", 
+      onClick: handleLogout 
+    },
+  ];
+
+  return (
+    <SidebarProvider>
+      <div className="min-h-screen bg-deep-black text-white flex">
+        {/* Sidebar */}
+        <Sidebar className="glass-morphism border-r border-gray-700">
+          <SidebarContent>
+            <div className="p-6 border-b border-gray-700">
+              <h2 className="text-2xl font-bold text-neon-green">RFP Engine</h2>
+              <p className="text-gray-400 text-sm">AI Proposal Center</p>
+            </div>
+            
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {sidebarItems.map((item, index) => (
+                    <SidebarMenuItem key={index}>
+                      <SidebarMenuButton 
+                        onClick={item.onClick}
+                        className={`flex items-center p-3 rounded-lg transition-colors duration-300 ${
+                          item.active 
+                            ? 'bg-gray-800 text-neon-green border-l-4 border-neon-green' 
+                            : 'hover:bg-gray-800'
+                        }`}
+                      >
+                        <item.icon className="mr-3 h-5 w-5" />
+                        {item.label}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+        </Sidebar>
+
+        {/* Main Content */}
+        <div className="flex-1 p-8">
+          {/* Hero Card */}
+          <motion.div 
+            className="glass-morphism neon-border rounded-2xl p-8 mb-8 relative overflow-hidden"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className="absolute inset-0 opacity-10 space-grid"></div>
+            
+            <div className="relative z-10">
+              <h1 className="text-4xl font-bold mb-4">
+                Welcome back, {user?.firstName || 'there'}! 👋
+              </h1>
+              <h2 className="text-3xl font-bold mb-2">Your AI Proposal Command Center</h2>
+              <p className="text-gray-400 mb-8">Transform RFPs into winning proposals with intelligent automation</p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card 
+                    className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer"
+                    onClick={() => setShowUploadModal(true)}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Upload className="h-8 w-8 text-neon-cyan mx-auto mb-3" />
+                      <h3 className="font-bold mb-2">Upload RFP</h3>
+                      <p className="text-sm text-gray-400">Start new proposal</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card 
+                    className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer"
+                    onClick={() => setShowSmartMatch(true)}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Search className="h-8 w-8 text-neon-green mx-auto mb-3" />
+                      <h3 className="font-bold mb-2">SmartMatch</h3>
+                      <p className="text-sm text-gray-400">Analyze compatibility</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer">
+                    <CardContent className="p-6 text-center">
+                      <Database className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
+                      <h3 className="font-bold mb-2">Memory Bank</h3>
+                      <p className="text-sm text-gray-400">Past proposals</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+                
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <Card 
+                    className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer"
+                    onClick={() => setShowAIGeneration(true)}
+                  >
+                    <CardContent className="p-6 text-center">
+                      <Wand2 className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+                      <h3 className="font-bold mb-2">AI Draft</h3>
+                      <p className="text-sm text-gray-400">Generate proposal</p>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+          
+          {/* Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Recent RFPs */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+            >
+              <Card className="glass-morphism">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <FileText className="mr-2 h-5 w-5" />
+                    Recent RFPs
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {rfps.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <Upload className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No RFPs uploaded yet</p>
+                      <Button 
+                        onClick={() => setShowUploadModal(true)}
+                        className="mt-4 bg-neon-green text-black hover:bg-neon-green/90"
+                        size="sm"
+                      >
+                        Upload Your First RFP
+                      </Button>
+                    </div>
+                  ) : (
+                    rfps.slice(0, 3).map((rfp: any) => (
+                      <div key={rfp.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div>
+                          <h4 className="font-semibold">{rfp.title}</h4>
+                          <p className="text-sm text-gray-400">
+                            Uploaded: {new Date(rfp.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                          rfp.status === 'generated' ? 'bg-neon-green text-black' :
+                          rfp.status === 'analyzed' ? 'bg-yellow-400 text-black' :
+                          'bg-gray-600 text-white'
+                        }`}>
+                          {rfp.status}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+            
+            {/* Performance Metrics */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4, duration: 0.5 }}
+            >
+              <Card className="glass-morphism">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <BarChart3 className="mr-2 h-5 w-5" />
+                    Performance Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <TrendingUp className="h-5 w-5 text-neon-green mr-2" />
+                      <span>Win Rate</span>
+                    </div>
+                    <span className="text-neon-green font-bold">
+                      {proposals.length > 0 ? '87%' : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Clock className="h-5 w-5 text-neon-cyan mr-2" />
+                      <span>Avg. Response Time</span>
+                    </div>
+                    <span className="text-neon-cyan font-bold">
+                      {proposals.length > 0 ? '2.3 days' : 'N/A'}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <FileText className="h-5 w-5 text-yellow-400 mr-2" />
+                      <span>Proposals Generated</span>
+                    </div>
+                    <span className="text-yellow-400 font-bold">{proposals.length}</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Upload className="h-5 w-5 text-purple-400 mr-2" />
+                      <span>RFPs Processed</span>
+                    </div>
+                    <span className="text-purple-400 font-bold">{rfps.length}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* Upload Modal */}
+      <Dialog open={showUploadModal} onOpenChange={setShowUploadModal}>
+        <DialogContent className="glass-morphism neon-border max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-3xl font-bold text-center mb-6">
+              Upload RFP Document
+            </DialogTitle>
+          </DialogHeader>
+          <FileUpload onUploadSuccess={handleUploadSuccess} />
+        </DialogContent>
+      </Dialog>
+
+      {/* SmartMatch Modal */}
+      {showSmartMatch && (
+        <SmartMatch 
+          onClose={() => setShowSmartMatch(false)}
+          onAnalysisComplete={handleSmartMatchComplete}
+          rfps={rfps}
+        />
+      )}
+
+      {/* AI Generation Modal */}
+      {showAIGeneration && selectedRfpId && (
+        <AIGeneration 
+          rfpId={selectedRfpId}
+          onClose={() => {
+            setShowAIGeneration(false);
+            setSelectedRfpId(null);
+          }}
+        />
+      )}
+    </SidebarProvider>
+  );
+}
