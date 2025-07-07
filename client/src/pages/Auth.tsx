@@ -226,62 +226,58 @@ export default function Auth() {
               ) : (
                 <Form {...otpForm}>
                   <form onSubmit={otpForm.handleSubmit(onOTPSubmit)} className="space-y-6">
-                    <FormField
-                      control={otpForm.control}
-                      name="otp"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-white flex items-center justify-center gap-2">
-                            <Shield className="h-4 w-4 text-[#00FFA3]" />
-                            Enter Verification Code
-                          </FormLabel>
-                          <FormControl>
-                            <div className="flex justify-center">
-                              <input
-                                ref={otpInputRef}
-                                type="text"
-                                maxLength={6}
-                                placeholder=""
-                                value={field.value}
-                                onChange={(e) => {
-                                  console.log('Input change:', e.target.value);
-                                  const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-                                  console.log('Filtered value:', value);
-                                  field.onChange(value);
-                                }}
-                                onFocus={(e) => e.target.select()}
-                                autoComplete="one-time-code"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                autoFocus
-                                className="w-full max-w-xs text-center text-2xl font-mono tracking-widest bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-2 focus:ring-[#00FFA3] focus:outline-none rounded-md px-4 py-3"
-                              />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                          
-                          {/* Development OTP Display */}
-                          {devOtp && (
-                            <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
-                              <p className="text-sm text-yellow-300 text-center mb-2">
-                                <strong>Development Mode:</strong> Your verification code is <span className="font-mono text-[#00FFA3]">{devOtp}</span>
-                              </p>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => {
-                                  otpForm.setValue('otp', devOtp);
-                                }}
-                                className="w-full text-xs bg-yellow-900/10 border-yellow-500/30 text-yellow-300 hover:bg-yellow-900/20"
-                              >
-                                Auto-fill Code
-                              </Button>
-                            </div>
-                          )}
-                        </FormItem>
+                    <div className="space-y-4">
+                      <div className="text-center">
+                        <div className="text-white flex items-center justify-center gap-2 mb-4">
+                          <Shield className="h-4 w-4 text-[#00FFA3]" />
+                          Enter Verification Code
+                        </div>
+                        <div className="flex justify-center">
+                          <input
+                            ref={otpInputRef}
+                            type="text"
+                            maxLength={6}
+                            placeholder="000000"
+                            value={otpForm.watch('otp')}
+                            onChange={(e) => {
+                              const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                              otpForm.setValue('otp', value);
+                            }}
+                            onPaste={(e) => {
+                              e.preventDefault();
+                              const paste = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+                              otpForm.setValue('otp', paste);
+                            }}
+                            autoComplete="one-time-code"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            autoFocus
+                            className="w-full max-w-xs text-center text-2xl font-mono tracking-widest bg-gray-800/50 border border-gray-700 text-white placeholder-gray-500 focus:border-[#00FFA3] focus:ring-2 focus:ring-[#00FFA3] focus:outline-none rounded-md px-4 py-3"
+                          />
+                        </div>
+                      </div>
+                      
+                      {/* Development OTP Display */}
+                      {devOtp && (
+                        <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+                          <p className="text-sm text-yellow-300 text-center mb-2">
+                            <strong>Development Mode:</strong> Your verification code is <span className="font-mono text-[#00FFA3]">{devOtp}</span>
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              otpInputRef.current!.value = devOtp;
+                              otpForm.setValue('otp', devOtp);
+                            }}
+                            className="w-full text-xs bg-yellow-900/10 border-yellow-500/30 text-yellow-300 hover:bg-yellow-900/20"
+                          >
+                            Auto-fill Code
+                          </Button>
+                        </div>
                       )}
-                    />
+                    </div>
 
                     <Button
                       type="submit"
