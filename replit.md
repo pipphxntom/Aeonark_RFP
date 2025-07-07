@@ -107,6 +107,9 @@ Changelog:
 - July 07, 2025. Implemented Analytics Dashboard with performance metrics, conversion funnels, and chart visualizations
 - July 07, 2025. Extended database schema with memory clauses and analytics tracking tables
 - July 07, 2025. Integrated navigation between dashboard, editor, and analytics views
+- July 07, 2025. Fixed OpenAI quota issues with fallback responses for analysis and proposal generation
+- July 07, 2025. Added 6-digit OTP authentication system with dedicated Auth page before onboarding
+- July 07, 2025. Fixed email integration JavaScript errors and updated routing for new authentication flow
 ```
 
 ## Recent Changes

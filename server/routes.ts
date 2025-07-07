@@ -29,6 +29,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
   await setupAuth(app);
 
+  // OTP Authentication routes
+  app.post('/api/auth/send-otp', async (req, res) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Generate 6-digit OTP
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      
+      // In development, log the OTP instead of sending email
+      console.log(`📧 OTP for ${email}: ${otp}`);
+      
+      // Store OTP in session (in production, use Redis or database)
+      req.session.otpData = {
+        email,
+        otp,
+        createdAt: Date.now(),
+        attempts: 0
+      };
+      
+      res.json({ 
+        success: true, 
+        message: "OTP sent successfully",
+        // In development, include OTP in response for testing
+        ...(process.env.NODE_ENV === 'development' && { otp })
+      });
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+      res.status(500).json({ message: "Failed to send OTP" });
+    }
+  });
+
+  app.post('/api/auth/verify-otp', async (req, res) => {
+    try {
+      const { email, otp } = req.body;
+      
+      if (!email || !otp) {
+        return res.status(400).json({ message: "Email and OTP are required" });
+      }
+      
+      const otpData = req.session.otpData;
+      
+      if (!otpData || otpData.email !== email) {
+        return res.status(400).json({ message: "Invalid OTP session" });
+      }
+      
+      // Check if OTP has expired (5 minutes)
+      if (Date.now() - otpData.createdAt > 5 * 60 * 1000) {
+        delete req.session.otpData;
+        return res.status(400).json({ message: "OTP has expired" });
+      }
+      
+      // Check if too many attempts
+      if (otpData.attempts >= 3) {
+        delete req.session.otpData;
+        return res.status(400).json({ message: "Too many failed attempts" });
+      }
+      
+      // Verify OTP
+      if (otpData.otp !== otp) {
+        otpData.attempts += 1;
+        return res.status(400).json({ message: "Invalid OTP" });
+      }
+      
+      // OTP verified successfully - create user session
+      const mockUser = {
+        claims: {
+          sub: `otp-user-${email.replace('@', '-').replace('.', '-')}`,
+          email: email,
+          name: email.split('@')[0]
+        }
+      };
+      
+      // Create or update user in database
+      await storage.upsertUser({
+        id: mockUser.claims.sub,
+        email: mockUser.claims.email,
+        name: mockUser.claims.name,
+        isOnboardingComplete: false,
+        industry: "",
+        companySize: "",
+        servicesOffered: [],
+        tonePreference: "professional"
+      });
+      
+      // Create session
+      req.session.user = mockUser;
+      delete req.session.otpData;
+      
+      res.json({ 
+        success: true, 
+        message: "OTP verified successfully",
+        user: mockUser
+      });
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      res.status(500).json({ message: "Failed to verify OTP" });
+    }
+  });
+
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {

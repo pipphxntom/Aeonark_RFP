@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/Landing";
+import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
 import Onboarding from "@/pages/Onboarding";
 import NotFound from "@/pages/not-found";
@@ -33,6 +34,9 @@ function Router() {
       </Route>
       <Route path="/login">
         <Landing />
+      </Route>
+      <Route path="/auth">
+        <Auth />
       </Route>
       <Route path="/onboarding">
         {isAuthenticated ? <Onboarding /> : <Landing />}
