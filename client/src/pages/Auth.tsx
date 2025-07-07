@@ -237,21 +237,24 @@ export default function Auth() {
                           </FormLabel>
                           <FormControl>
                             <div className="flex justify-center">
-                              <Input
+                              <input
                                 ref={otpInputRef}
                                 type="text"
                                 maxLength={6}
                                 placeholder=""
                                 value={field.value}
                                 onChange={(e) => {
+                                  console.log('Input change:', e.target.value);
                                   const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                                  console.log('Filtered value:', value);
                                   field.onChange(value);
                                 }}
                                 onFocus={(e) => e.target.select()}
                                 autoComplete="one-time-code"
                                 inputMode="numeric"
                                 pattern="[0-9]*"
-                                className="text-center text-2xl font-mono tracking-widest bg-gray-800/50 border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-[#00FFA3] focus:outline-none"
+                                autoFocus
+                                className="w-full max-w-xs text-center text-2xl font-mono tracking-widest bg-gray-800/50 border border-gray-700 text-white placeholder-gray-400 focus:border-[#00FFA3] focus:ring-2 focus:ring-[#00FFA3] focus:outline-none rounded-md px-4 py-3"
                               />
                             </div>
                           </FormControl>
