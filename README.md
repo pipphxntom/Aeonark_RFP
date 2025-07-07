@@ -50,7 +50,6 @@ Visit `http://localhost:5000` to access the application.
 | `OPENAI_API_KEY` | OpenAI API key for AI features | ✅ |
 | `RESEND_API_KEY` | Resend API key for email service | ✅ |
 | `SESSION_SECRET` | Secret key for session encryption | ✅ |
-| `REPLIT_DOMAINS` | Replit domain for OAuth (production) | ❌ |
 | `ISSUER_URL` | OAuth issuer URL (production) | ❌ |
 
 ## Architecture
@@ -71,7 +70,7 @@ Visit `http://localhost:5000` to access the application.
 
 ## Deployment
 
-This application is optimized for Replit deployment but can be deployed anywhere that supports Node.js and PostgreSQL.
+This application can be deployed anywhere that supports Node.js and PostgreSQL.
 
 ## Support
 
