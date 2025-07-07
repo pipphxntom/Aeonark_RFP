@@ -21,8 +21,11 @@ import {
   BarChart3,
   Home as HomeIcon,
   LogOut,
-  Settings
+  Settings,
+  Edit
 } from "lucide-react";
+import { ProposalEditor } from "@/components/ProposalEditor";
+import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 
 export default function Home() {
   const { user } = useAuth();
@@ -30,6 +33,8 @@ export default function Home() {
   const [showSmartMatch, setShowSmartMatch] = useState(false);
   const [showAIGeneration, setShowAIGeneration] = useState(false);
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
+  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'editor'>('dashboard');
+  const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null);
 
   const { data: rfps = [] } = useQuery({
     queryKey: ['/api/rfps'],
@@ -55,11 +60,22 @@ export default function Home() {
     window.location.href = '/api/logout';
   };
 
+  const handleEditProposal = (proposalId: number) => {
+    setSelectedProposalId(proposalId);
+    setCurrentView('editor');
+  };
+
+  const handleCloseEditor = () => {
+    setCurrentView('dashboard');
+    setSelectedProposalId(null);
+  };
+
   const sidebarItems = [
     { 
       icon: HomeIcon, 
       label: "Dashboard", 
-      active: true 
+      active: currentView === 'dashboard',
+      onClick: () => setCurrentView('dashboard')
     },
     { 
       icon: Upload, 
@@ -70,6 +86,12 @@ export default function Home() {
       icon: Search, 
       label: "SmartMatch", 
       onClick: () => setShowSmartMatch(true) 
+    },
+    { 
+      icon: BarChart3, 
+      label: "Analytics", 
+      active: currentView === 'analytics',
+      onClick: () => setCurrentView('analytics')
     },
     { 
       icon: FileText, 
@@ -126,7 +148,16 @@ export default function Home() {
         </Sidebar>
 
         {/* Main Content */}
-        <div className="flex-1 p-8">
+        <div className="flex-1">
+          {currentView === 'analytics' ? (
+            <AnalyticsDashboard />
+          ) : currentView === 'editor' && selectedProposalId ? (
+            <ProposalEditor 
+              proposalId={selectedProposalId} 
+              onClose={handleCloseEditor} 
+            />
+          ) : (
+            <div className="p-8">
           {/* Hero Card */}
           <motion.div 
             className="glass-morphism neon-border rounded-2xl p-8 mb-8 relative overflow-hidden"
@@ -259,12 +290,74 @@ export default function Home() {
               </Card>
             </motion.div>
             
-            {/* Performance Metrics */}
+            {/* Recent Proposals */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4, duration: 0.5 }}
+              transition={{ delay: 0.3, duration: 0.5 }}
             >
+              <Card className="glass-morphism">
+                <CardHeader>
+                  <CardTitle className="flex items-center">
+                    <Edit className="mr-2 h-5 w-5" />
+                    Recent Proposals
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {proposals.length === 0 ? (
+                    <div className="text-center py-8 text-gray-400">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No proposals generated yet</p>
+                      <Button 
+                        onClick={() => setShowSmartMatch(true)}
+                        className="mt-4 bg-neon-cyan text-black hover:bg-neon-cyan/90"
+                        size="sm"
+                      >
+                        Generate Your First Proposal
+                      </Button>
+                    </div>
+                  ) : (
+                    proposals.slice(0, 3).map((proposal: any) => (
+                      <div key={proposal.id} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                        <div className="flex-1">
+                          <h4 className="font-semibold">{proposal.title}</h4>
+                          <p className="text-sm text-gray-400">
+                            Created: {new Date(proposal.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="flex items-center space-x-3">
+                          <span className={`px-3 py-1 rounded-full text-sm font-bold ${
+                            proposal.status === 'final' ? 'bg-neon-green text-black' :
+                            proposal.status === 'review' ? 'bg-yellow-400 text-black' :
+                            'bg-gray-600 text-white'
+                          }`}>
+                            {proposal.status}
+                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleEditProposal(proposal.id)}
+                            className="border-neon-cyan text-neon-cyan hover:bg-neon-cyan hover:text-black"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+          
+          {/* Performance Metrics */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5, duration: 0.5 }}
+            className="mt-8"
+          >
               <Card className="glass-morphism">
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -312,6 +405,7 @@ export default function Home() {
               </Card>
             </motion.div>
           </div>
+          )}
         </div>
       </div>
 

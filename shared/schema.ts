@@ -82,7 +82,12 @@ export const proposals = pgTable("proposals", {
   pricing: jsonb("pricing"),
   timeline: text("timeline"),
   legalTerms: text("legal_terms"),
-  status: varchar("status").default("draft"), // draft, review, final, exported
+  status: varchar("status").default("draft"), // draft, review, final, exported, submitted, won, rejected
+  sections: jsonb("sections"), // Section editing status and metadata
+  shareToken: varchar("share_token"), // For secure sharing
+  lastEditedBy: varchar("last_edited_by"),
+  exportFormat: varchar("export_format"), // pdf, docx
+  submittedAt: timestamp("submitted_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -98,11 +103,39 @@ export const companyTemplates = pgTable("company_templates", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Memory engine clauses for reuse
+export const memoryClauses = pgTable("memory_clauses", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  proposalId: integer("proposal_id").references(() => proposals.id),
+  title: text("title").notNull(),
+  content: text("content").notNull(),
+  type: varchar("type").notNull(), // legal_clause, scope_item, pricing_item, etc
+  tags: text("tags").array(),
+  projectContext: text("project_context"),
+  tone: varchar("tone"), // formal, casual, technical
+  winRate: integer("win_rate").default(0), // Success rate when this clause was used
+  usageCount: integer("usage_count").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Analytics tracking
+export const analyticsEvents = pgTable("analytics_events", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  proposalId: integer("proposal_id").references(() => proposals.id),
+  eventType: varchar("event_type").notNull(), // upload, draft_generated, edited, exported, submitted, won, rejected
+  eventData: jsonb("event_data"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   rfps: many(rfps),
   proposals: many(proposals),
   templates: many(companyTemplates),
+  memoryClauses: many(memoryClauses),
+  analyticsEvents: many(analyticsEvents),
 }));
 
 export const rfpsRelations = relations(rfps, ({ one, many }) => ({
@@ -139,12 +172,36 @@ export const companyTemplatesRelations = relations(companyTemplates, ({ one }) =
   }),
 }));
 
+export const memoryClausesRelations = relations(memoryClauses, ({ one }) => ({
+  user: one(users, {
+    fields: [memoryClauses.userId],
+    references: [users.id],
+  }),
+  proposal: one(proposals, {
+    fields: [memoryClauses.proposalId],
+    references: [proposals.id],
+  }),
+}));
+
+export const analyticsEventsRelations = relations(analyticsEvents, ({ one }) => ({
+  user: one(users, {
+    fields: [analyticsEvents.userId],
+    references: [users.id],
+  }),
+  proposal: one(proposals, {
+    fields: [analyticsEvents.proposalId],
+    references: [proposals.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRfpSchema = createInsertSchema(rfps).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSmartMatchSchema = createInsertSchema(smartMatches).omit({ id: true, createdAt: true });
 export const insertProposalSchema = createInsertSchema(proposals).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertCompanyTemplateSchema = createInsertSchema(companyTemplates).omit({ id: true, createdAt: true });
+export const insertMemoryClauseSchema = createInsertSchema(memoryClauses).omit({ id: true, createdAt: true });
+export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({ id: true, timestamp: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -157,3 +214,7 @@ export type InsertProposal = z.infer<typeof insertProposalSchema>;
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertCompanyTemplate = z.infer<typeof insertCompanyTemplateSchema>;
 export type CompanyTemplate = typeof companyTemplates.$inferSelect;
+export type InsertMemoryClause = z.infer<typeof insertMemoryClauseSchema>;
+export type MemoryClause = typeof memoryClauses.$inferSelect;
+export type InsertAnalyticsEvent = z.infer<typeof insertAnalyticsEventSchema>;
+export type AnalyticsEvent = typeof analyticsEvents.$inferSelect;

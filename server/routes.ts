@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { insertRfpSchema, insertSmartMatchSchema, insertProposalSchema } from "@shared/schema";
-import { generateProposal, analyzeRfpCompatibility } from "./services/openai";
+import { generateProposal, analyzeRfpCompatibility, regenerateSection } from "./services/openai";
 import { processUploadedFile } from "./services/fileProcessor";
 import multer from "multer";
 import path from "path";
@@ -279,6 +279,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating proposal:", error);
       res.status(500).json({ message: "Failed to update proposal" });
+    }
+  });
+
+  // Proposal Editor Routes
+  app.patch('/api/proposals/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const proposalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const updateData = req.body;
+
+      // Verify ownership
+      const proposal = await storage.getProposalById(proposalId);
+      if (!proposal || proposal.userId !== userId) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      const updated = await storage.updateProposal(proposalId, updateData);
+      
+      // Track analytics event
+      await storage.createAnalyticsEvent({
+        userId,
+        proposalId,
+        eventType: "edited",
+        eventData: { section: Object.keys(updateData)[0] }
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error updating proposal:", error);
+      res.status(500).json({ message: "Failed to update proposal" });
+    }
+  });
+
+  app.post('/api/proposals/:id/regenerate', isAuthenticated, async (req: any, res) => {
+    try {
+      const proposalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { sectionType } = req.body;
+
+      const proposal = await storage.getProposalById(proposalId);
+      if (!proposal || proposal.userId !== userId) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      const rfp = await storage.getRfpById(proposal.rfpId);
+      const user = await storage.getUser(userId);
+      
+      if (!rfp || !user) {
+        return res.status(404).json({ message: "Required data not found" });
+      }
+
+      // Generate new content for the specific section
+      const newContent = await regenerateSection(rfp, user, sectionType);
+      
+      const updateData: any = {};
+      if (sectionType === "executive-summary") updateData.executiveSummary = newContent.content;
+      else if (sectionType === "scope-of-work") updateData.scopeOfWork = newContent.content;
+      else if (sectionType === "timeline") updateData.timeline = newContent.content;
+      else if (sectionType === "legal-terms") updateData.legalTerms = newContent.content;
+
+      const updated = await storage.updateProposal(proposalId, updateData);
+
+      // Track analytics event
+      await storage.createAnalyticsEvent({
+        userId,
+        proposalId,
+        eventType: "regenerated",
+        eventData: { section: sectionType }
+      });
+
+      res.json(updated);
+    } catch (error) {
+      console.error("Error regenerating section:", error);
+      res.status(500).json({ message: "Failed to regenerate section" });
+    }
+  });
+
+  app.post('/api/proposals/:id/share', isAuthenticated, async (req: any, res) => {
+    try {
+      const proposalId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+
+      const proposal = await storage.getProposalById(proposalId);
+      if (!proposal || proposal.userId !== userId) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      const shareToken = await storage.generateShareToken(proposalId);
+      const shareUrl = `${req.protocol}://${req.hostname}/share/${shareToken}`;
+
+      res.json({ shareToken, shareUrl });
+    } catch (error) {
+      console.error("Error sharing proposal:", error);
+      res.status(500).json({ message: "Failed to share proposal" });
+    }
+  });
+
+  // Memory Clauses Routes
+  app.get('/api/memory-clauses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { type, search } = req.query;
+
+      let clauses;
+      if (search) {
+        clauses = await storage.searchMemoryClauses(userId, search as string);
+      } else if (type) {
+        clauses = await storage.getMemoryClausesByType(userId, type as string);
+      } else {
+        clauses = await storage.getMemoryClausesByUser(userId);
+      }
+
+      res.json(clauses);
+    } catch (error) {
+      console.error("Error fetching memory clauses:", error);
+      res.status(500).json({ message: "Failed to fetch memory clauses" });
+    }
+  });
+
+  app.post('/api/memory-clauses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const clauseData = { ...req.body, userId };
+
+      const clause = await storage.createMemoryClause(clauseData);
+      res.json(clause);
+    } catch (error) {
+      console.error("Error creating memory clause:", error);
+      res.status(500).json({ message: "Failed to create memory clause" });
+    }
+  });
+
+  app.patch('/api/memory-clauses/:id/use', isAuthenticated, async (req: any, res) => {
+    try {
+      const clauseId = parseInt(req.params.id);
+      await storage.updateMemoryClauseUsage(clauseId);
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error updating clause usage:", error);
+      res.status(500).json({ message: "Failed to update clause usage" });
+    }
+  });
+
+  // Analytics Routes
+  app.get('/api/analytics/summary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const summary = await storage.getAnalyticsSummary(userId);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error fetching analytics summary:", error);
+      res.status(500).json({ message: "Failed to fetch analytics summary" });
+    }
+  });
+
+  app.get('/api/analytics/timeline', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { range = "30d" } = req.query;
+      
+      // Mock data for timeline - replace with real implementation
+      const timelineData = Array.from({ length: 30 }, (_, i) => ({
+        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        proposals: Math.floor(Math.random() * 5),
+        turnaroundTime: Math.floor(Math.random() * 8) + 2
+      }));
+
+      res.json(timelineData);
+    } catch (error) {
+      console.error("Error fetching timeline data:", error);
+      res.status(500).json({ message: "Failed to fetch timeline data" });
+    }
+  });
+
+  app.get('/api/analytics/events', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { type } = req.query;
+      
+      const events = await storage.getAnalyticsEvents(userId, type as string);
+      res.json(events);
+    } catch (error) {
+      console.error("Error fetching analytics events:", error);
+      res.status(500).json({ message: "Failed to fetch analytics events" });
+    }
+  });
+
+  // Public sharing route (no auth required)
+  app.get('/share/:token', async (req, res) => {
+    try {
+      const { token } = req.params;
+      const proposal = await storage.getProposalByShareToken(token);
+      
+      if (!proposal) {
+        return res.status(404).json({ message: "Proposal not found" });
+      }
+
+      // Return a public view of the proposal
+      res.json({
+        title: proposal.title,
+        executiveSummary: proposal.executiveSummary,
+        scopeOfWork: proposal.scopeOfWork,
+        timeline: proposal.timeline,
+        pricing: proposal.pricing,
+        createdAt: proposal.createdAt
+      });
+    } catch (error) {
+      console.error("Error fetching shared proposal:", error);
+      res.status(500).json({ message: "Failed to fetch proposal" });
     }
   });
 

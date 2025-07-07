@@ -4,6 +4,8 @@ import {
   smartMatches,
   proposals,
   companyTemplates,
+  memoryClauses,
+  analyticsEvents,
   type User,
   type UpsertUser,
   type InsertRfp,
@@ -14,9 +16,14 @@ import {
   type Proposal,
   type InsertCompanyTemplate,
   type CompanyTemplate,
+  type InsertMemoryClause,
+  type MemoryClause,
+  type InsertAnalyticsEvent,
+  type AnalyticsEvent,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, like, sql, count } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 export interface IStorage {
   // User operations (required for Replit Auth)
@@ -39,10 +46,29 @@ export interface IStorage {
   getProposalsByUser(userId: string): Promise<Proposal[]>;
   getProposalById(id: number): Promise<Proposal | undefined>;
   updateProposal(id: number, data: Partial<InsertProposal>): Promise<Proposal>;
+  generateShareToken(proposalId: number): Promise<string>;
+  getProposalByShareToken(token: string): Promise<Proposal | undefined>;
   
   // Template operations
   createCompanyTemplate(template: InsertCompanyTemplate): Promise<CompanyTemplate>;
   getTemplatesByUser(userId: string): Promise<CompanyTemplate[]>;
+  
+  // Memory clause operations
+  createMemoryClause(clause: InsertMemoryClause): Promise<MemoryClause>;
+  getMemoryClausesByUser(userId: string): Promise<MemoryClause[]>;
+  getMemoryClausesByType(userId: string, type: string): Promise<MemoryClause[]>;
+  searchMemoryClauses(userId: string, query: string): Promise<MemoryClause[]>;
+  updateMemoryClauseUsage(id: number): Promise<void>;
+  
+  // Analytics operations
+  createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent>;
+  getAnalyticsEvents(userId: string, eventType?: string): Promise<AnalyticsEvent[]>;
+  getAnalyticsSummary(userId: string): Promise<{
+    totalProposals: number;
+    winRate: number;
+    avgScore: number;
+    timeSaved: number;
+  }>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -151,6 +177,108 @@ export class DatabaseStorage implements IStorage {
 
   async getTemplatesByUser(userId: string): Promise<CompanyTemplate[]> {
     return await db.select().from(companyTemplates).where(eq(companyTemplates.userId, userId));
+  }
+
+  async generateShareToken(proposalId: number): Promise<string> {
+    const token = nanoid(32);
+    await db.update(proposals)
+      .set({ shareToken: token })
+      .where(eq(proposals.id, proposalId));
+    return token;
+  }
+
+  async getProposalByShareToken(token: string): Promise<Proposal | undefined> {
+    const [proposal] = await db.select().from(proposals).where(eq(proposals.shareToken, token));
+    return proposal;
+  }
+
+  // Memory clause operations
+  async createMemoryClause(clause: InsertMemoryClause): Promise<MemoryClause> {
+    const [created] = await db.insert(memoryClauses).values(clause).returning();
+    return created;
+  }
+
+  async getMemoryClausesByUser(userId: string): Promise<MemoryClause[]> {
+    return await db.select().from(memoryClauses)
+      .where(eq(memoryClauses.userId, userId))
+      .orderBy(desc(memoryClauses.usageCount));
+  }
+
+  async getMemoryClausesByType(userId: string, type: string): Promise<MemoryClause[]> {
+    return await db.select().from(memoryClauses)
+      .where(and(eq(memoryClauses.userId, userId), eq(memoryClauses.type, type)))
+      .orderBy(desc(memoryClauses.usageCount));
+  }
+
+  async searchMemoryClauses(userId: string, query: string): Promise<MemoryClause[]> {
+    return await db.select().from(memoryClauses)
+      .where(and(
+        eq(memoryClauses.userId, userId),
+        like(memoryClauses.content, `%${query}%`)
+      ))
+      .orderBy(desc(memoryClauses.usageCount));
+  }
+
+  async updateMemoryClauseUsage(id: number): Promise<void> {
+    await db.update(memoryClauses)
+      .set({ usageCount: sql`${memoryClauses.usageCount} + 1` })
+      .where(eq(memoryClauses.id, id));
+  }
+
+  // Analytics operations
+  async createAnalyticsEvent(event: InsertAnalyticsEvent): Promise<AnalyticsEvent> {
+    const [created] = await db.insert(analyticsEvents).values(event).returning();
+    return created;
+  }
+
+  async getAnalyticsEvents(userId: string, eventType?: string): Promise<AnalyticsEvent[]> {
+    const conditions = [eq(analyticsEvents.userId, userId)];
+    if (eventType) {
+      conditions.push(eq(analyticsEvents.eventType, eventType));
+    }
+    return await db.select().from(analyticsEvents)
+      .where(and(...conditions))
+      .orderBy(desc(analyticsEvents.timestamp));
+  }
+
+  async getAnalyticsSummary(userId: string): Promise<{
+    totalProposals: number;
+    winRate: number;
+    avgScore: number;
+    timeSaved: number;
+  }> {
+    const [proposalCount] = await db.select({ count: count() })
+      .from(proposals)
+      .where(eq(proposals.userId, userId));
+
+    const wonProposals = await db.select({ count: count() })
+      .from(proposals)
+      .where(and(eq(proposals.userId, userId), eq(proposals.status, "won")));
+
+    const submittedProposals = await db.select({ count: count() })
+      .from(proposals)
+      .where(and(eq(proposals.userId, userId), eq(proposals.status, "submitted")));
+
+    const matches = await db.select().from(smartMatches)
+      .innerJoin(rfps, eq(smartMatches.rfpId, rfps.id))
+      .where(eq(rfps.userId, userId));
+
+    const avgScore = matches.length > 0 
+      ? matches.reduce((sum, match) => sum + match.smart_matches.overallScore, 0) / matches.length 
+      : 0;
+
+    const totalSubmitted = submittedProposals[0].count + wonProposals[0].count;
+    const winRate = totalSubmitted > 0 ? (wonProposals[0].count / totalSubmitted) * 100 : 0;
+    
+    // Estimate time saved: ~8 hours per proposal on average
+    const timeSaved = proposalCount[0].count * 8;
+
+    return {
+      totalProposals: proposalCount[0].count,
+      winRate: Math.round(winRate * 100) / 100,
+      avgScore: Math.round(avgScore * 100) / 100,
+      timeSaved,
+    };
   }
 }
 

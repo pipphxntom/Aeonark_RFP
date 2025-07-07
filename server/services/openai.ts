@@ -194,58 +194,77 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
 }
 
 export async function regenerateSection(
-  sectionType: 'executiveSummary' | 'scopeOfWork' | 'timeline' | 'legalTerms',
   rfp: Rfp,
   user: User,
-  currentContent: string
-): Promise<string> {
+  sectionType: string
+): Promise<{ content: string }> {
   try {
-    const sectionPrompts = {
-      executiveSummary: "Generate a compelling executive summary that highlights key value propositions and competitive advantages.",
-      scopeOfWork: "Create a detailed scope of work with clear deliverables, phases, and success criteria.",
-      timeline: "Develop a realistic project timeline with key milestones and dependencies.",
-      legalTerms: "Write standard legal terms and conditions appropriate for this type of engagement."
-    };
+    let prompt = "";
+    let systemPrompt = `You are an expert proposal writer. Generate professional content for the ${sectionType.replace('-', ' ')} section.`;
 
-    const prompt = `
-      Regenerate the ${sectionType} section for this proposal.
-      
-      Current content to improve upon:
-      ${currentContent}
-      
-      RFP context:
-      - Title: ${rfp.title}
-      - Key requirements: ${rfp.extractedText?.substring(0, 1000) || "N/A"}
-      
-      User profile:
-      - Industry: ${user.industry || "N/A"}
-      - Services: ${user.servicesOffered?.join(", ") || "N/A"}
-      - Tone: ${user.tonePreference || "Professional"}
-      
-      Task: ${sectionPrompts[sectionType]}
-      
-      Make it more compelling and specific than the current version.
-      Respond with just the improved content, no JSON wrapper.
-    `;
+    switch (sectionType) {
+      case "executive-summary":
+        prompt = `Write an executive summary for a proposal responding to this RFP:
+
+RFP Title: ${rfp.title}
+RFP Description: ${rfp.description || rfp.extractedText?.substring(0, 500) || ""}
+Company Industry: ${user.industry || "Technology"}
+Company Services: ${user.servicesOffered?.join(", ") || "Professional services"}
+
+Create a compelling 2-3 paragraph executive summary that highlights our value proposition and key benefits.`;
+        break;
+
+      case "scope-of-work":
+        prompt = `Create a detailed scope of work section for this RFP:
+
+RFP Title: ${rfp.title}
+RFP Description: ${rfp.description || rfp.extractedText?.substring(0, 500) || ""}
+Company Services: ${user.servicesOffered?.join(", ") || "Professional services"}
+
+Break down the work into clear deliverables and phases.`;
+        break;
+
+      case "timeline":
+        prompt = `Generate a realistic project timeline for this RFP:
+
+RFP Title: ${rfp.title}
+RFP Description: ${rfp.description || rfp.extractedText?.substring(0, 500) || ""}
+Company Services: ${user.servicesOffered?.join(", ") || "Professional services"}
+
+Provide a phased timeline with milestones and key deliverables.`;
+        break;
+
+      case "legal-terms":
+        prompt = `Create standard legal terms and conditions for this proposal:
+
+RFP Title: ${rfp.title}
+Company Industry: ${user.industry || "Technology"}
+
+Include standard clauses for payment terms, intellectual property, liability, and project scope changes.`;
+        break;
+
+      default:
+        throw new Error("Invalid section type");
+    }
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       messages: [
-        {
-          role: "system",
-          content: "You are an expert proposal writer. Improve the given section to be more compelling and specific."
-        },
-        {
-          role: "user",
-          content: prompt
-        }
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt }
       ],
-      temperature: 0.8,
+      max_tokens: 1500,
+      temperature: 0.7,
     });
 
-    return response.choices[0].message.content || currentContent;
-  } catch (error) {
+    const content = response.choices[0].message.content;
+    if (!content) {
+      throw new Error("No content generated");
+    }
+
+    return { content };
+  } catch (error: any) {
     console.error("Error regenerating section:", error);
-    throw new Error("Failed to regenerate section");
+    throw new Error("Failed to regenerate section: " + error.message);
   }
 }
