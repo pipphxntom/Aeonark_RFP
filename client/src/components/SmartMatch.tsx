@@ -21,6 +21,9 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const { toast } = useToast();
 
+  // Debug logs
+  console.log('SmartMatch props:', { rfps, selectedRfpId, analysisComplete });
+
   const { data: smartMatch, isLoading: isLoadingMatch } = useQuery({
     queryKey: ['/api/rfps', selectedRfpId, 'smartmatch'],
     enabled: !!selectedRfpId && analysisComplete,
@@ -57,10 +60,14 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
 
   const analyzeMutation = useMutation({
     mutationFn: async (rfpId: number) => {
+      console.log('Making API request for RFP:', rfpId);
       const response = await apiRequest('POST', `/api/rfps/${rfpId}/analyze`);
-      return response.json();
+      const result = await response.json();
+      console.log('Analysis result:', result);
+      return result;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      console.log('Analysis successful:', data);
       setAnalysisComplete(true);
       toast({
         title: "Analysis Complete",
@@ -68,9 +75,10 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
       });
     },
     onError: (error) => {
+      console.error('Analysis error:', error);
       toast({
         title: "Analysis Failed",
-        description: error.message,
+        description: error.message || "Failed to analyze RFP. Please try again.",
         variant: "destructive",
       });
     },
@@ -78,7 +86,15 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
 
   const handleAnalyze = () => {
     if (selectedRfpId) {
+      console.log('Starting analysis for RFP:', selectedRfpId);
       analyzeMutation.mutate(selectedRfpId);
+    } else {
+      console.log('No RFP selected');
+      toast({
+        title: "No RFP Selected",
+        description: "Please select an RFP to analyze first.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -130,7 +146,7 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
         </div>
 
         {/* RFP Selection */}
-        {!selectedRfpId && (
+        {!analysisComplete && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
