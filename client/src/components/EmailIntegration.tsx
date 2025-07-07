@@ -16,6 +16,7 @@ import {
   RefreshCw,
   ExternalLink
 } from "lucide-react";
+import { SiSlack, SiGmail } from "react-icons/si";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -89,16 +90,6 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
   });
 
   const handleConnect = (platform: keyof IntegrationStatus) => {
-    if (platform === 'slack') {
-      // Redirect to Slack OAuth
-      window.open(`/api/integrations/slack/auth`, '_blank');
-    } else if (platform === 'gmail') {
-      // Redirect to Google OAuth
-      window.open(`/api/integrations/gmail/auth`, '_blank');
-    } else if (platform === 'outlook') {
-      // Redirect to Microsoft OAuth
-      window.open(`/api/integrations/outlook/auth`, '_blank');
-    }
     connectIntegration.mutate(platform);
   };
 
@@ -107,7 +98,7 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
       key: 'slack' as keyof IntegrationStatus,
       title: 'Slack',
       description: 'Monitor channels for RFP discussions and notifications',
-      icon: MessageSquare,
+      icon: SiSlack,
       color: 'from-purple-500 to-pink-500',
       features: ['Channel monitoring', 'Direct message scanning', 'Real-time notifications']
     },
@@ -115,7 +106,7 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
       key: 'gmail' as keyof IntegrationStatus,
       title: 'Gmail',
       description: 'Automatically detect and process RFP emails',
-      icon: Mail,
+      icon: SiGmail,
       color: 'from-red-500 to-orange-500',
       features: ['Email scanning', 'Attachment processing', 'Smart categorization']
     },

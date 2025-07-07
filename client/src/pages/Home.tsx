@@ -25,6 +25,7 @@ import {
   Edit,
   Mail
 } from "lucide-react";
+import { AnimatedIcon } from "@/components/AnimatedIcon";
 import { ProposalEditor } from "@/components/ProposalEditor";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { EmailIntegration } from "@/components/EmailIntegration";
@@ -92,7 +93,7 @@ export default function Home() {
     },
     { 
       icon: Mail, 
-      label: "Connect Email", 
+      label: "Integrations", 
       onClick: () => setShowEmailIntegration(true) 
     },
     { 
@@ -127,7 +128,22 @@ export default function Home() {
         <Sidebar className="glass-morphism border-r border-gray-700">
           <SidebarContent>
             <div className="p-6 border-b border-gray-700">
-              <h2 className="text-2xl font-bold text-neon-green">RFP Engine</h2>
+              <div className="flex items-center space-x-3 mb-2">
+                <div className="w-8 h-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-lg border border-gray-700 flex items-center justify-center relative overflow-hidden">
+                  <div className="w-4 h-5 bg-gray-600 rounded-sm relative">
+                    <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-gray-700 transform rotate-45 origin-bottom-left"></div>
+                    <div className="absolute top-2 left-0.5 right-0.5 space-y-0.5">
+                      <div className="h-0.5 bg-[#00FFA3] rounded"></div>
+                      <div className="h-0.5 bg-[#00FFA3] rounded w-3/4"></div>
+                      <div className="h-0.5 bg-[#00FFA3] rounded w-1/2"></div>
+                    </div>
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold">
+                  <span className="text-white">Aeon</span>
+                  <span className="bg-gradient-to-r from-[#00FFA3] to-[#00B8FF] bg-clip-text text-transparent">RFP</span>
+                </h2>
+              </div>
               <p className="text-gray-400 text-sm">AI Proposal Center</p>
             </div>
             
@@ -192,7 +208,7 @@ export default function Home() {
                     onClick={() => setShowUploadModal(true)}
                   >
                     <CardContent className="p-6 text-center">
-                      <Upload className="h-8 w-8 text-neon-cyan mx-auto mb-3" />
+                      <AnimatedIcon type="upload" size={32} className="h-8 w-8 text-neon-cyan mx-auto mb-3" />
                       <h3 className="font-bold mb-2">Upload RFP</h3>
                       <p className="text-sm text-gray-400">Start new proposal</p>
                     </CardContent>
@@ -208,7 +224,7 @@ export default function Home() {
                     onClick={() => setShowSmartMatch(true)}
                   >
                     <CardContent className="p-6 text-center">
-                      <Search className="h-8 w-8 text-neon-green mx-auto mb-3" />
+                      <AnimatedIcon type="search" size={32} className="h-8 w-8 text-neon-green mx-auto mb-3" />
                       <h3 className="font-bold mb-2">SmartMatch</h3>
                       <p className="text-sm text-gray-400">Analyze compatibility</p>
                     </CardContent>
@@ -221,7 +237,7 @@ export default function Home() {
                 >
                   <Card className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer">
                     <CardContent className="p-6 text-center">
-                      <Database className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
+                      <AnimatedIcon type="database" size={32} className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
                       <h3 className="font-bold mb-2">Memory Bank</h3>
                       <p className="text-sm text-gray-400">Past proposals</p>
                     </CardContent>
@@ -237,7 +253,7 @@ export default function Home() {
                     onClick={() => setShowAIGeneration(true)}
                   >
                     <CardContent className="p-6 text-center">
-                      <Wand2 className="h-8 w-8 text-purple-400 mx-auto mb-3" />
+                      <AnimatedIcon type="wand" size={32} className="h-8 w-8 text-purple-400 mx-auto mb-3" />
                       <h3 className="font-bold mb-2">AI Draft</h3>
                       <p className="text-sm text-gray-400">Generate proposal</p>
                     </CardContent>
