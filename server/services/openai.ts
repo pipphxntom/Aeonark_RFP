@@ -7,16 +7,24 @@ const openai = new OpenAI({
 
 export interface SmartMatchAnalysis {
   overallScore: number;
-  industryMatch: number;
-  servicesMatch: number;
-  timelineMatch: number;
-  certificationsMatch: number;
+  breakdown: {
+    serviceMatch: number;
+    industryMatch: number;
+    timelineAlignment: number;
+    certifications: number;
+    valueRange: number;
+    pastWinSimilarity: number;
+  };
+  verdict: string;
   details: {
+    serviceReason: string;
     industryReason: string;
-    servicesReason: string;
     timelineReason: string;
     certificationsReason: string;
+    valueReason: string;
+    pastWinReason: string;
     recommendations: string[];
+    explainability: string[];
   };
 }
 
@@ -39,47 +47,86 @@ export interface ProposalContent {
 export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<SmartMatchAnalysis> {
   try {
     const prompt = `
-      Analyze the compatibility between this RFP and the user's profile.
-      
+      Analyze the RFP compatibility using the SmartMatch framework with 6 dimensions:
+
       RFP Details:
       - Title: ${rfp.title}
       - Description: ${rfp.description || "N/A"}
-      - Content: ${rfp.extractedText?.substring(0, 2000) || "N/A"}
+      - Content: ${rfp.extractedText?.substring(0, 3000) || "N/A"}
+      - Deadline: ${rfp.deadline ? new Date(rfp.deadline).toISOString() : "Not specified"}
       
       User Profile:
       - Industry: ${user.industry || "N/A"}
-      - Company Size: ${user.companySize || "N/A"}
+      - Company Size: ${user.companySize || "N/A"}  
       - Services Offered: ${user.servicesOffered?.join(", ") || "N/A"}
-      
-      Analyze compatibility in these areas and provide scores (0-100):
-      1. Industry Match - How well does the user's industry align with RFP requirements?
-      2. Services Match - How well do the user's services match what's needed?
-      3. Timeline Match - Based on typical project timelines, how feasible is this?
-      4. Certifications Match - Are there any certification gaps?
-      
-      Respond with JSON in this format:
+      - Tone Preference: ${user.tonePreference || "Professional"}
+
+      SCORING FRAMEWORK (each dimension 0-100):
+
+      1. SERVICE MATCH (35% weight): 
+         - Does RFP require services the company offers?
+         - Use semantic analysis, not just keywords
+         - Score: 100 = perfect match, 0 = no overlap
+
+      2. INDUSTRY MATCH (15% weight):
+         - Does RFP belong to user's industry vertical?
+         - Consider adjacent industries (e.g., MedTech = Healthcare)
+         - Score: 100 = exact match, 75 = adjacent, 50 = somewhat related
+
+      3. TIMELINE ALIGNMENT (10% weight):
+         - Extract RFP deadline if present
+         - Compare with typical project delivery time
+         - Score: 100 = plenty of time, 50 = tight but doable, 0 = impossible
+
+      4. CERTIFICATIONS (15% weight):
+         - Scan for required certifications (SOC2, ISO, HIPAA, etc.)
+         - Score: 100 = all requirements met, 0 = missing critical ones
+
+      5. VALUE RANGE (10% weight):
+         - Extract budget/value indicators if present
+         - Estimate project size vs company capacity
+         - Score: 100 = perfect fit, 50 = acceptable, 0 = too small/large
+
+      6. PAST WIN SIMILARITY (15% weight):
+         - How similar is this to typical winning projects?
+         - Consider complexity, domain, requirements
+         - Score: 100 = very similar to past wins, 0 = completely different
+
+      Calculate overall score: (service*0.35 + industry*0.15 + timeline*0.10 + cert*0.15 + value*0.10 + pastwin*0.15)
+
+      Determine verdict: 0-40=Low Fit, 41-65=Medium Fit, 66-80=High Fit, 81-100=Strong Fit
+
+      Respond with JSON:
       {
         "overallScore": number,
-        "industryMatch": number,
-        "servicesMatch": number,
-        "timelineMatch": number,
-        "certificationsMatch": number,
+        "breakdown": {
+          "serviceMatch": number,
+          "industryMatch": number, 
+          "timelineAlignment": number,
+          "certifications": number,
+          "valueRange": number,
+          "pastWinSimilarity": number
+        },
+        "verdict": "Low Fit|Medium Fit|High Fit|Strong Fit",
         "details": {
-          "industryReason": "explanation",
-          "servicesReason": "explanation", 
-          "timelineReason": "explanation",
-          "certificationsReason": "explanation",
-          "recommendations": ["recommendation1", "recommendation2"]
+          "serviceReason": "why this score for services",
+          "industryReason": "why this score for industry",
+          "timelineReason": "why this score for timeline", 
+          "certificationsReason": "why this score for certifications",
+          "valueReason": "why this score for value/budget",
+          "pastWinReason": "why this score for similarity",
+          "recommendations": ["actionable recommendation 1", "actionable recommendation 2"],
+          "explainability": ["why score is low/high reason 1", "why score is low/high reason 2"]
         }
       }
     `;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o",
       messages: [
         {
           role: "system",
-          content: "You are an expert RFP analyst. Analyze the compatibility between RFPs and company profiles, providing detailed scoring and recommendations."
+          content: "You are an expert RFP analyst using the SmartMatch framework. Analyze compatibility with precise scoring across 6 weighted dimensions. Be thorough and provide actionable insights."
         },
         {
           role: "user",
@@ -87,23 +134,51 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.3,
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || "{}");
     
+    // Validate and normalize scores
+    const breakdown = analysis.breakdown || {};
+    const validatedBreakdown = {
+      serviceMatch: Math.max(0, Math.min(100, breakdown.serviceMatch || 0)),
+      industryMatch: Math.max(0, Math.min(100, breakdown.industryMatch || 0)),
+      timelineAlignment: Math.max(0, Math.min(100, breakdown.timelineAlignment || 0)),
+      certifications: Math.max(0, Math.min(100, breakdown.certifications || 0)),
+      valueRange: Math.max(0, Math.min(100, breakdown.valueRange || 0)),
+      pastWinSimilarity: Math.max(0, Math.min(100, breakdown.pastWinSimilarity || 0))
+    };
+
+    // Calculate weighted overall score
+    const overallScore = Math.round(
+      validatedBreakdown.serviceMatch * 0.35 +
+      validatedBreakdown.industryMatch * 0.15 +
+      validatedBreakdown.timelineAlignment * 0.10 +
+      validatedBreakdown.certifications * 0.15 +
+      validatedBreakdown.valueRange * 0.10 +
+      validatedBreakdown.pastWinSimilarity * 0.15
+    );
+
+    // Determine verdict based on score
+    let verdict = "Low Fit";
+    if (overallScore >= 81) verdict = "Strong Fit";
+    else if (overallScore >= 66) verdict = "High Fit";
+    else if (overallScore >= 41) verdict = "Medium Fit";
+
     return {
-      overallScore: Math.max(0, Math.min(100, analysis.overallScore || 0)),
-      industryMatch: Math.max(0, Math.min(100, analysis.industryMatch || 0)),
-      servicesMatch: Math.max(0, Math.min(100, analysis.servicesMatch || 0)),
-      timelineMatch: Math.max(0, Math.min(100, analysis.timelineMatch || 0)),
-      certificationsMatch: Math.max(0, Math.min(100, analysis.certificationsMatch || 0)),
+      overallScore,
+      breakdown: validatedBreakdown,
+      verdict,
       details: analysis.details || {
+        serviceReason: "Analysis not available",
         industryReason: "Analysis not available",
-        servicesReason: "Analysis not available",
         timelineReason: "Analysis not available", 
         certificationsReason: "Analysis not available",
-        recommendations: []
+        valueReason: "Analysis not available",
+        pastWinReason: "Analysis not available",
+        recommendations: [],
+        explainability: []
       }
     };
   } catch (error) {

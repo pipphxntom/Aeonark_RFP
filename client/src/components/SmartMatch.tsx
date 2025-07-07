@@ -2,11 +2,13 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { X, TrendingUp, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { X, TrendingUp, CheckCircle, AlertTriangle, XCircle, Target, Clock, Award, DollarSign, Users, Settings } from "lucide-react";
 
 interface SmartMatchProps {
   onClose: () => void;
@@ -22,6 +24,35 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
   const { data: smartMatch, isLoading: isLoadingMatch } = useQuery({
     queryKey: ['/api/rfps', selectedRfpId, 'smartmatch'],
     enabled: !!selectedRfpId && analysisComplete,
+    queryFn: async () => {
+      const response = await fetch(`/api/rfps/${selectedRfpId}/smartmatch`);
+      if (!response.ok) throw new Error('Failed to fetch analysis');
+      const data = await response.json();
+      
+      // Transform data to match new format
+      return {
+        overallScore: data.overallScore,
+        verdict: data.analysisDetails?.verdict || 'Analysis Available',
+        breakdown: data.analysisDetails?.breakdown || {
+          serviceMatch: data.servicesMatch || 0,
+          industryMatch: data.industryMatch || 0,
+          timelineAlignment: data.timelineMatch || 0,
+          certifications: data.certificationsMatch || 0,
+          valueRange: 50, // Default for old data
+          pastWinSimilarity: 50 // Default for old data
+        },
+        details: data.analysisDetails?.details || {
+          serviceReason: "Analysis not available",
+          industryReason: "Analysis not available", 
+          timelineReason: "Analysis not available",
+          certificationsReason: "Analysis not available",
+          valueReason: "Analysis not available",
+          pastWinReason: "Analysis not available",
+          recommendations: [],
+          explainability: []
+        }
+      };
+    }
   });
 
   const analyzeMutation = useMutation({
@@ -190,92 +221,91 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            {/* Score Dial */}
-            <div className="text-center mb-12">
-              <motion.div 
-                className="relative inline-block"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: 0.5, duration: 0.8 }}
-              >
-                <svg width="200" height="200" className="transform -rotate-90">
-                  <circle 
-                    cx="100" 
-                    cy="100" 
-                    r="80" 
-                    stroke="rgb(55, 65, 81)" 
-                    strokeWidth="20" 
-                    fill="transparent"
-                  />
-                  <motion.circle 
-                    cx="100" 
-                    cy="100" 
-                    r="80" 
-                    stroke="var(--neon-green)" 
-                    strokeWidth="20" 
-                    fill="transparent"
-                    strokeDasharray="502"
-                    strokeDashoffset={502 - (502 * smartMatch.overallScore) / 100}
-                    initial={{ strokeDashoffset: 502 }}
-                    animate={{ strokeDashoffset: 502 - (502 * smartMatch.overallScore) / 100 }}
-                    transition={{ delay: 1, duration: 2 }}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl font-bold text-neon-green">
-                      {smartMatch.overallScore}%
-                    </div>
-                    <div className="text-sm text-gray-400">Match Score</div>
-                    <div className="text-xs text-neon-green font-bold">
-                      {smartMatch.overallScore >= 80 ? 'High Fit' : 
-                       smartMatch.overallScore >= 60 ? 'Medium Fit' : 'Low Fit'}
+            {/* Overall Score Display */}
+            <Card className="glass-morphism neon-border-cyan">
+              <CardContent className="p-8 text-center">
+                <motion.div 
+                  className="relative inline-block mb-6"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: 0.3, type: "spring", stiffness: 100 }}
+                >
+                  <div className="relative w-48 h-48 mx-auto">
+                    <div className="absolute inset-0 rounded-full border-8 border-gray-700"></div>
+                    <div 
+                      className={`absolute inset-0 rounded-full border-8 border-transparent ${
+                        smartMatch.overallScore >= 80 ? 'border-t-neon-green border-r-neon-green' :
+                        smartMatch.overallScore >= 60 ? 'border-t-yellow-400 border-r-yellow-400' :
+                        'border-t-red-400 border-r-red-400'
+                      }`}
+                      style={{
+                        transform: `rotate(${(smartMatch.overallScore / 100) * 360}deg)`
+                      }}
+                    ></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center">
+                        <div className="text-5xl font-bold">{smartMatch.overallScore}</div>
+                        <div className="text-lg text-gray-400">Score</div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-            </div>
+                </motion.div>
+                
+                <Badge 
+                  className={`text-xl px-6 py-2 ${
+                    smartMatch.verdict === 'Strong Fit' ? 'bg-neon-green text-black' :
+                    smartMatch.verdict === 'High Fit' ? 'bg-neon-cyan text-black' :
+                    smartMatch.verdict === 'Medium Fit' ? 'bg-yellow-400 text-black' :
+                    'bg-red-400 text-white'
+                  }`}
+                >
+                  {smartMatch.verdict}
+                </Badge>
+              </CardContent>
+            </Card>
 
-            {/* Breakdown Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {/* 6-Dimension Breakdown */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { label: 'Industry Match', score: smartMatch.industryMatch, reason: smartMatch.analysisDetails?.industryReason },
-                { label: 'Services Fit', score: smartMatch.servicesMatch, reason: smartMatch.analysisDetails?.servicesReason },
-                { label: 'Timeline', score: smartMatch.timelineMatch, reason: smartMatch.analysisDetails?.timelineReason },
-                { label: 'Certifications', score: smartMatch.certificationsMatch, reason: smartMatch.analysisDetails?.certificationsReason }
-              ].map((item, index) => {
-                const Icon = getScoreIcon(item.score);
+                { key: 'serviceMatch', title: 'Service Match', icon: Target, weight: '35%', description: 'Services alignment' },
+                { key: 'industryMatch', title: 'Industry Match', icon: Users, weight: '15%', description: 'Industry vertical fit' },
+                { key: 'timelineAlignment', title: 'Timeline Fit', icon: Clock, weight: '10%', description: 'Delivery timeline' },
+                { key: 'certifications', title: 'Certifications', icon: Award, weight: '15%', description: 'Required certifications' },
+                { key: 'valueRange', title: 'Value Range', icon: DollarSign, weight: '10%', description: 'Budget alignment' },
+                { key: 'pastWinSimilarity', title: 'Past Wins', icon: TrendingUp, weight: '15%', description: 'Similar project success' }
+              ].map((dimension, index) => {
+                const score = smartMatch.breakdown[dimension.key as keyof typeof smartMatch.breakdown];
+                const Icon = dimension.icon;
+                
                 return (
                   <motion.div
-                    key={item.label}
+                    key={dimension.key}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 1.5 + index * 0.2 }}
+                    transition={{ delay: 0.5 + index * 0.1 }}
                   >
-                    <Card className={`glass-morphism border-l-4 ${getScoreBorder(item.score)}`}>
-                      <CardContent className="p-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <h3 className="font-bold flex items-center">
-                            <Icon className={`h-4 w-4 mr-2 ${getScoreColor(item.score)}`} />
-                            {item.label}
-                          </h3>
-                          <span className={`font-bold ${getScoreColor(item.score)}`}>
-                            {item.score}%
-                          </span>
+                    <Card className={`h-full ${getScoreBorder(score)} hover:scale-105 transition-transform duration-300`}>
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <Icon className={`h-6 w-6 ${getScoreColor(score)}`} />
+                          <Badge variant="outline" className="text-xs">
+                            {dimension.weight}
+                          </Badge>
                         </div>
-                        <p className="text-sm text-gray-400 mb-3">
-                          {item.reason || 'Analysis details not available'}
-                        </p>
-                        <div className="bg-gray-700 rounded-full h-2">
-                          <motion.div 
-                            className={`h-2 rounded-full ${
-                              item.score >= 80 ? 'bg-neon-green' :
-                              item.score >= 60 ? 'bg-yellow-400' :
-                              'bg-red-400'
+                        <CardTitle className="text-lg">{dimension.title}</CardTitle>
+                        <p className="text-sm text-gray-400">{dimension.description}</p>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-2xl font-bold">{score}</span>
+                            <span className="text-gray-400">/100</span>
+                          </div>
+                          <Progress 
+                            value={score} 
+                            className={`h-3 ${
+                              score >= 80 ? 'progress-glow' : ''
                             }`}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${item.score}%` }}
-                            transition={{ delay: 2 + index * 0.1, duration: 1 }}
                           />
                         </div>
                       </CardContent>
@@ -285,53 +315,65 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
               })}
             </div>
 
-            {/* Recommendations */}
-            {smartMatch.analysisDetails?.recommendations && smartMatch.analysisDetails.recommendations.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 2.5 }}
-              >
-                <Card className="glass-morphism">
-                  <CardContent className="p-6">
-                    <h3 className="text-xl font-bold mb-4">Recommendations</h3>
-                    <ul className="space-y-2">
-                      {smartMatch.analysisDetails.recommendations.map((rec: string, index: number) => (
-                        <li key={index} className="flex items-start">
-                          <div className="w-2 h-2 bg-neon-cyan rounded-full mt-2 mr-3 flex-shrink-0" />
-                          <span className="text-gray-300">{rec}</span>
+            {/* Detailed Explanations */}
+            <Card className="glass-morphism">
+              <CardHeader>
+                <CardTitle className="flex items-center">
+                  <Settings className="h-5 w-5 mr-2" />
+                  Detailed Analysis
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {smartMatch.details.explainability && smartMatch.details.explainability.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-neon-cyan">Key Insights</h4>
+                    <ul className="space-y-1">
+                      {smartMatch.details.explainability.map((insight: string, index: number) => (
+                        <li key={index} className="text-gray-300 text-sm flex items-start">
+                          <span className="text-neon-green mr-2">•</span>
+                          {insight}
                         </li>
                       ))}
                     </ul>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            )}
+                  </div>
+                )}
+                
+                {smartMatch.details.recommendations && smartMatch.details.recommendations.length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-2 text-neon-cyan">Recommendations</h4>
+                    <ul className="space-y-1">
+                      {smartMatch.details.recommendations.map((rec: string, index: number) => (
+                        <li key={index} className="text-gray-300 text-sm flex items-start">
+                          <span className="text-yellow-400 mr-2">→</span>
+                          {rec}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
             {/* Action Buttons */}
-            <motion.div 
-              className="text-center space-x-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 3 }}
-            >
+            <div className="flex gap-4 justify-center pt-6">
               <Button
-                onClick={onClose}
+                onClick={() => {
+                  setSelectedRfpId(null);
+                  setAnalysisComplete(false);
+                }}
                 variant="outline"
-                className="bg-gray-700 text-white border-gray-600 hover:bg-gray-600"
+                className="px-6 py-3"
               >
-                Back to Dashboard
+                Analyze Another RFP
               </Button>
-              {smartMatch.overallScore >= 60 && (
-                <Button
-                  onClick={handleGenerateProposal}
-                  className="bg-neon-green text-black px-8 py-3 rounded-lg font-bold hover:animate-glow transition-all duration-300 transform hover:scale-105"
-                >
-                  Generate Proposal
-                  <TrendingUp className="ml-2 h-5 w-5" />
-                </Button>
-              )}
-            </motion.div>
+              <Button
+                onClick={handleGenerateProposal}
+                className="bg-gradient-to-r from-neon-green to-neon-cyan text-black px-8 py-3 rounded-lg font-bold hover:opacity-90 transition-all duration-300"
+                size="lg"
+              >
+                Generate Proposal
+              </Button>
+            </div>
           </motion.div>
         )}
       </motion.div>

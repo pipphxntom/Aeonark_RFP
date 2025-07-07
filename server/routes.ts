@@ -145,15 +145,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Analyze RFP compatibility using AI
       const analysis = await analyzeRfpCompatibility(rfp, user);
       
-      // Save SmartMatch results
+      // Save SmartMatch results  
       const smartMatch = await storage.createSmartMatch({
         rfpId,
         overallScore: analysis.overallScore,
-        industryMatch: analysis.industryMatch,
-        servicesMatch: analysis.servicesMatch,
-        timelineMatch: analysis.timelineMatch,
-        certificationsMatch: analysis.certificationsMatch,
-        analysisDetails: analysis.details,
+        industryMatch: analysis.breakdown.industryMatch,
+        servicesMatch: analysis.breakdown.serviceMatch,
+        timelineMatch: analysis.breakdown.timelineAlignment,
+        certificationsMatch: analysis.breakdown.certifications,
+        analysisDetails: {
+          verdict: analysis.verdict,
+          breakdown: analysis.breakdown,
+          details: analysis.details,
+        },
       });
 
       await storage.updateRfp(rfpId, { status: "analyzed" });
