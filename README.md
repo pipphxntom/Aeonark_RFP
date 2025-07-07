@@ -75,3 +75,28 @@ This application can be deployed anywhere that supports Node.js and PostgreSQL.
 ## Support
 
 For issues or questions, please check the console logs and ensure all environment variables are properly configured.
+
+## Quick Start
+
+1. Clone this repl
+2. Set up your environment variables in the Secrets tab:
+   - `DATABASE_URL` - Your PostgreSQL connection string
+   - `RESEND_API_KEY` - Your Resend API key for emails
+   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `SESSION_SECRET` - A random secret for sessions
+3. Run `npm run db:setup` to initialize the database
+4. Run the project
+
+## Database Setup
+
+The database will be automatically initialized when you run the project for the first time. If you encounter database issues:
+
+```bash
+# Generate migration files
+npm run db:generate
+
+# Apply migrations to database
+npm run db:migrate
+
+# Or run the complete setup
+npm run db:setup
