@@ -28,6 +28,7 @@ type OTPForm = z.infer<typeof otpSchema>;
 export default function Auth() {
   const [step, setStep] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
+  const [devOtp, setDevOtp] = useState('');
   const { toast } = useToast();
 
   const emailForm = useForm<EmailForm>({
@@ -48,13 +49,23 @@ export default function Auth() {
     mutationFn: async (data: EmailForm) => {
       return apiRequest('POST', '/api/auth/send-otp', data);
     },
-    onSuccess: () => {
+    onSuccess: (response: any) => {
       setEmail(emailForm.getValues('email'));
       setStep('otp');
-      toast({
-        title: "Code Sent!",
-        description: "Please check your email for the 6-digit verification code.",
-      });
+      
+      // In development, show OTP if email failed
+      if (response.otp) {
+        setDevOtp(response.otp);
+        toast({
+          title: "Code Generated!",
+          description: `Your verification code is: ${response.otp}`,
+        });
+      } else {
+        toast({
+          title: "Code Sent!",
+          description: "Please check your email for the 6-digit verification code.",
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -214,19 +225,43 @@ export default function Auth() {
                           </FormLabel>
                           <FormControl>
                             <div className="flex justify-center">
-                              <InputOTP maxLength={6} {...field}>
+                              <InputOTP 
+                                maxLength={6} 
+                                value={field.value}
+                                onChange={(value) => field.onChange(value)}
+                              >
                                 <InputOTPGroup>
-                                  <InputOTPSlot index={0} className="bg-gray-800/50 border-gray-700 text-white" />
-                                  <InputOTPSlot index={1} className="bg-gray-800/50 border-gray-700 text-white" />
-                                  <InputOTPSlot index={2} className="bg-gray-800/50 border-gray-700 text-white" />
-                                  <InputOTPSlot index={3} className="bg-gray-800/50 border-gray-700 text-white" />
-                                  <InputOTPSlot index={4} className="bg-gray-800/50 border-gray-700 text-white" />
-                                  <InputOTPSlot index={5} className="bg-gray-800/50 border-gray-700 text-white" />
+                                  <InputOTPSlot index={0} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
+                                  <InputOTPSlot index={1} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
+                                  <InputOTPSlot index={2} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
+                                  <InputOTPSlot index={3} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
+                                  <InputOTPSlot index={4} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
+                                  <InputOTPSlot index={5} className="bg-gray-800/50 border-gray-700 text-white focus:border-[#00FFA3] focus:ring-[#00FFA3]" />
                                 </InputOTPGroup>
                               </InputOTP>
                             </div>
                           </FormControl>
                           <FormMessage />
+                          
+                          {/* Development OTP Display */}
+                          {devOtp && (
+                            <div className="mt-4 p-3 bg-yellow-900/20 border border-yellow-500/30 rounded-lg">
+                              <p className="text-sm text-yellow-300 text-center mb-2">
+                                <strong>Development Mode:</strong> Your verification code is <span className="font-mono text-[#00FFA3]">{devOtp}</span>
+                              </p>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  otpForm.setValue('otp', devOtp);
+                                }}
+                                className="w-full text-xs bg-yellow-900/10 border-yellow-500/30 text-yellow-300 hover:bg-yellow-900/20"
+                              >
+                                Auto-fill Code
+                              </Button>
+                            </div>
+                          )}
                         </FormItem>
                       )}
                     />

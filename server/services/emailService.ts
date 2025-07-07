@@ -28,20 +28,43 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
       return false;
     }
 
-    const { data, error } = await resend.emails.send({
-      from: params.from || 'AeonRFP <noreply@resend.dev>',
-      to: [params.to],
-      subject: params.subject,
-      html: params.html,
-    });
+    // For unverified emails, try different from addresses that might work
+    const fromAddresses = [
+      'AeonRFP <onboarding@resend.dev>',
+      'AeonRFP <no-reply@resend.dev>',
+      'AeonRFP <verification@resend.dev>',
+      'AeonRFP <auth@resend.dev>'
+    ];
 
-    if (error) {
-      console.error('Resend email error:', error);
-      return false;
+    let lastError = null;
+    
+    for (const fromAddress of fromAddresses) {
+      try {
+        const { data, error } = await resend.emails.send({
+          from: params.from || fromAddress,
+          to: [params.to],
+          subject: params.subject,
+          html: params.html,
+        });
+
+        if (error) {
+          console.warn(`Resend email error with ${fromAddress}:`, error);
+          lastError = error;
+          continue;
+        }
+
+        console.log('Email sent successfully:', data?.id, 'using:', fromAddress);
+        return true;
+      } catch (err) {
+        console.warn(`Failed to send with ${fromAddress}:`, err);
+        lastError = err;
+        continue;
+      }
     }
 
-    console.log('Email sent successfully:', data?.id);
-    return true;
+    // If all attempts failed, log the last error
+    console.error('All email send attempts failed. Last error:', lastError);
+    return false;
   } catch (error) {
     console.error('Failed to send email:', error);
     return false;
