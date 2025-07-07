@@ -1,6 +1,6 @@
-# AeonRFP - AI-Powered RFP Analysis Platform
+# AeonRFP
 
-A comprehensive solution for analyzing RFP documents and generating professional proposals using AI.
+AI-powered RFP (Request for Proposal) analysis and proposal generation platform with Gmail and Slack integrations.
 
 ## Features
 

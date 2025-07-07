@@ -60,11 +60,8 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
   // Connect to OAuth provider
   const connectMutation = useMutation({
     mutationFn: async (provider: string) => {
-      const response = await apiRequest(`/api/oauth/connect`, {
-        method: "POST",
-        body: { provider }
-      });
-      return response;
+      const response = await apiRequest("POST", "/api/oauth/connect", { provider });
+      return response.json();
     },
     onSuccess: (data, provider) => {
       // Open OAuth URL in new window
@@ -96,9 +93,8 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
   // Disconnect OAuth provider
   const disconnectMutation = useMutation({
     mutationFn: async (provider: string) => {
-      return await apiRequest(`/api/oauth/disconnect/${provider}`, {
-        method: "DELETE"
-      });
+      const response = await apiRequest("DELETE", `/api/oauth/disconnect/${provider}`);
+      return response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/oauth/status"] });
@@ -154,9 +150,8 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
 
   const fetchEmails = useMutation({
     mutationFn: async () => {
-      return apiRequest('/api/integrations/emails/scan', {
-        method: 'GET'
-      });
+      const response = await apiRequest('GET', '/api/integrations/emails/scan');
+      return response.json();
     },
     onSuccess: (data) => {
       setEmailSummaries(data.emails || []);
