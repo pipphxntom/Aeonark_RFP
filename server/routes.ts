@@ -495,6 +495,93 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Email Integration Routes
+  app.post('/api/integrations/:platform/connect', isAuthenticated, async (req: any, res) => {
+    try {
+      const { platform } = req.params;
+      const userId = req.user.claims.sub;
+      
+      // Mock connection for development
+      // In production, this would handle OAuth flows for each platform
+      const connectionData = {
+        platform,
+        userId,
+        connected: true,
+        connectedAt: new Date().toISOString()
+      };
+      
+      res.json({ success: true, connection: connectionData });
+    } catch (error) {
+      console.error(`Error connecting to ${req.params.platform}:`, error);
+      res.status(500).json({ message: "Failed to connect integration" });
+    }
+  });
+
+  app.get('/api/integrations/:platform/auth', isAuthenticated, async (req: any, res) => {
+    try {
+      const { platform } = req.params;
+      
+      // Mock OAuth redirect for development
+      // In production, this would redirect to actual OAuth providers
+      const redirectUrls = {
+        slack: 'https://slack.com/oauth/v2/authorize',
+        gmail: 'https://accounts.google.com/o/oauth2/auth',
+        outlook: 'https://login.microsoftonline.com/common/oauth2/v2.0/authorize'
+      };
+      
+      res.json({ 
+        authUrl: redirectUrls[platform as keyof typeof redirectUrls] || '#',
+        message: `Redirecting to ${platform} OAuth...`
+      });
+    } catch (error) {
+      console.error(`Error getting auth URL for ${req.params.platform}:`, error);
+      res.status(500).json({ message: "Failed to get auth URL" });
+    }
+  });
+
+  app.get('/api/integrations/emails/scan', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      
+      // Mock email scanning for development
+      // In production, this would connect to actual email APIs
+      const mockEmails = [
+        {
+          id: '1',
+          subject: 'RFP: Software Development Services for Digital Transformation',
+          sender: 'procurement@techcorp.com',
+          summary: 'TechCorp is seeking a development partner for a 6-month digital transformation project. Requirements include modern web application development, cloud migration, and API integration. Budget range: $150K-$200K.',
+          isRfp: true,
+          confidence: 0.95,
+          timestamp: '2 hours ago'
+        },
+        {
+          id: '2',
+          subject: 'Consulting Opportunity - Healthcare Platform',
+          sender: 'partnerships@healthsys.org',
+          summary: 'HealthSys is looking for consulting services to design and implement a patient management platform. Project involves system architecture, security compliance, and training. Timeline: 4 months.',
+          isRfp: true,
+          confidence: 0.87,
+          timestamp: '5 hours ago'
+        },
+        {
+          id: '3',
+          subject: 'Partnership Inquiry',
+          sender: 'business@startup.io',
+          summary: 'General partnership inquiry from a startup looking to explore collaboration opportunities. No specific project details or budget mentioned.',
+          isRfp: false,
+          confidence: 0.23,
+          timestamp: '1 day ago'
+        }
+      ];
+      
+      res.json({ emails: mockEmails });
+    } catch (error) {
+      console.error("Error scanning emails:", error);
+      res.status(500).json({ message: "Failed to scan emails" });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

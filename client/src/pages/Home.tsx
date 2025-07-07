@@ -22,16 +22,19 @@ import {
   Home as HomeIcon,
   LogOut,
   Settings,
-  Edit
+  Edit,
+  Mail
 } from "lucide-react";
 import { ProposalEditor } from "@/components/ProposalEditor";
 import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
+import { EmailIntegration } from "@/components/EmailIntegration";
 
 export default function Home() {
   const { user } = useAuth();
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showSmartMatch, setShowSmartMatch] = useState(false);
   const [showAIGeneration, setShowAIGeneration] = useState(false);
+  const [showEmailIntegration, setShowEmailIntegration] = useState(false);
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
   const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'editor'>('dashboard');
   const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null);
@@ -86,6 +89,11 @@ export default function Home() {
       icon: Search, 
       label: "SmartMatch", 
       onClick: () => setShowSmartMatch(true) 
+    },
+    { 
+      icon: Mail, 
+      label: "Connect Email", 
+      onClick: () => setShowEmailIntegration(true) 
     },
     { 
       icon: BarChart3, 
@@ -438,6 +446,13 @@ export default function Home() {
             setShowAIGeneration(false);
             setSelectedRfpId(null);
           }}
+        />
+      )}
+
+      {/* Email Integration Modal */}
+      {showEmailIntegration && (
+        <EmailIntegration 
+          onClose={() => setShowEmailIntegration(false)}
         />
       )}
     </SidebarProvider>
