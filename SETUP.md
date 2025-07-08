@@ -1,70 +1,61 @@
-
 # AeonRFP Setup Guide
 
-## Prerequisites
-- Node.js 20+
-- PostgreSQL database (Neon recommended)
+## Quick Start
 
-## Environment Variables Required
+1. **Clone this project** to your Replit workspace
+2. **Set up environment variables** in Replit Secrets:
+   - `RESEND_API_KEY` - Get from [resend.com](https://resend.com)
+   - `OPENAI_API_KEY` - Get from [platform.openai.com](https://platform.openai.com)
+   - `SESSION_SECRET` - Any secure random string
+3. **Run the application** - The "Start application" workflow will automatically start
 
-Create a `.env` file in the root directory with:
+## Environment Variables
 
-```env
-# Database
-DATABASE_URL="postgresql://username:password@host/database"
+All environment variables are stored in **Replit Secrets** and persist across project clones:
 
-# OpenAI
-OPENAI_API_KEY="your-openai-api-key"
+### Required Variables
+- `DATABASE_URL` - Automatically configured by Replit PostgreSQL
+- `RESEND_API_KEY` - Email service for OTP authentication
+- `OPENAI_API_KEY` - AI-powered proposal generation
+- `SESSION_SECRET` - Secure session management
 
-# Session Security
-SESSION_SECRET="your-random-session-secret"
+### Optional Variables
+- `ISSUER_URL` - OAuth configuration (defaults to Replit)
+- `REPLIT_DOMAINS` - Allowed domains for OAuth
 
-# Replit OAuth (for production)
-REPLIT_DOMAINS="your-replit-domain.replit.dev"
-ISSUER_URL="https://replit.com"
-```
+## Database Setup
 
-## Setup Steps
+The database is automatically configured when you run the application:
+- PostgreSQL database is provisioned automatically
+- Database migrations run on startup
+- No manual setup required
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd aeonrfp
-   ```
+## Email Service
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+The OTP email system uses Resend:
+1. Sign up at [resend.com](https://resend.com)
+2. Generate an API key
+3. Add it to Replit Secrets as `RESEND_API_KEY`
+4. Email functionality will work automatically
 
-3. **Set up database**
-   - Create a PostgreSQL database (recommend using Neon: https://neon.tech)
-   - Add the DATABASE_URL to your .env file
-   - Run database migrations:
-   ```bash
-   npm run db:push
-   ```
+## Features
 
-4. **Configure environment variables**
-   - Copy the .env variables listed above
-   - Get OpenAI API key from https://platform.openai.com
-   - Generate a random SESSION_SECRET (use: `openssl rand -base64 32`)
+- **AI Proposal Generation** - Upload RFPs and generate professional proposals
+- **Smart Matching** - AI compatibility analysis for RFPs
+- **Analytics Dashboard** - Track proposal performance and win rates
+- **OAuth Integration** - Gmail and Slack integrations for monitoring
+- **Memory Engine** - Reusable clauses from successful proposals
 
-5. **Start development server**
-   ```bash
-   npm run dev
-   ```
+## Troubleshooting
 
-## Replit Deployment
+- **Email not working**: Check that `RESEND_API_KEY` is set in Replit Secrets
+- **AI features not working**: Verify `OPENAI_API_KEY` is configured
+- **Database errors**: Database auto-provisions on first run
+- **Session issues**: Ensure `SESSION_SECRET` is a secure random string
 
-If deploying on Replit:
-1. Fork this Repl
-2. Provision a PostgreSQL database in Replit
-3. Add environment variables in Replit Secrets
-4. The app will auto-configure for Replit OAuth
+## Development
 
-## Common Issues
-
-- **"OAuth discovery failed"**: Normal in development mode, uses mock auth
-- **Database connection errors**: Check your DATABASE_URL format
-- **Port issues**: App runs on port 5000 by default
+The application runs in development mode with:
+- Hot module reloading for frontend changes
+- Automatic server restart on backend changes
+- Development OTP display when email service is unavailable
