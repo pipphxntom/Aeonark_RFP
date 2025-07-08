@@ -2,7 +2,8 @@ import express, { type Request, Response, NextFunction } from "express";
 import { config } from "dotenv";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { initializeDatabase } from "./initDb";
+import { initializeDatabase } from './initDb';
+import { autoProvisionDatabase, waitForDatabase } from './auto-provision';
 
 // Load environment variables from .env file
 config();
@@ -12,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Initialize database on startup
-initializeDatabase().catch(console.error);
+// initializeDatabase().catch(console.error);
 
 app.use((req, res, next) => {
   const start = Date.now();
@@ -68,11 +69,40 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`serving on port ${port}`);
-  });
+
+    async function startServer() {
+  try {
+    // Auto-provision database if needed
+    if (!process.env.DATABASE_URL) {
+      console.log('🔧 No DATABASE_URL found - starting auto-provisioning...');
+
+      const provisioned = await autoProvisionDatabase();
+      if (provisioned) {
+        console.log('⏳ Waiting for database to be ready...');
+        const ready = await waitForDatabase();
+
+        if (!ready) {
+          console.log('⚠️  Auto-provisioning timed out. Manual setup required.');
+          console.log('1. Open Database tab → Create PostgreSQL database');
+          console.log('2. Restart this Repl');
+          process.exit(1);
+        }
+      }
+    }
+
+    await initializeDatabase();
+
+    server.listen({
+      port,
+      host: "0.0.0.0",
+      reusePort: true,
+    }, () => {
+      log(`serving on port ${port}`);
+    });
+  } catch (error) {
+    console.error("Failed to start server:", error);
+  }
+}
+
+  startServer();
 })();
