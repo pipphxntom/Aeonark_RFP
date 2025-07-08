@@ -120,6 +120,7 @@ Changelog:
 - July 08, 2025. Successfully migrated from Replit Agent to standard Replit environment with proper secret management, email service configuration, and AeonRFP branding
 - July 08, 2025. Permanently resolved OAuth integration issues: Gmail and Slack integrations now work gracefully with or without credentials, proper error handling, configuration status display, and comprehensive setup documentation
 - July 08, 2025. Added development OAuth defaults with .env fallbacks, updated all onboarding fonts to SF Pro Display for consistent Apple-style typography throughout calibration flow
+- July 08, 2025. Resolved Google OAuth 2.0 compliance error with proper redirect URI configuration, created comprehensive GitHub clone guide for seamless project transfers
 ```
 
 ## Recent Changes
