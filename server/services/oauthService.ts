@@ -67,9 +67,7 @@ class GoogleOAuthProvider implements OAuthProvider {
       ],
       state,
       prompt: 'consent',
-      response_type: 'code',
-      include_granted_scopes: true,
-      approval_prompt: 'force'
+      include_granted_scopes: true
     });
   }
 
