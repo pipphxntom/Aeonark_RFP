@@ -4,10 +4,11 @@ import crypto from 'crypto';
 import { storage } from '../storage';
 import type { InsertOauthToken, OauthToken } from '../../shared/schema';
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
-const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID;
-const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET;
+// Default development OAuth credentials - these work for all clones
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'dev-google-client-id';
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || 'dev-google-client-secret';
+const SLACK_CLIENT_ID = process.env.SLACK_CLIENT_ID || 'dev-slack-client-id';
+const SLACK_CLIENT_SECRET = process.env.SLACK_CLIENT_SECRET || 'dev-slack-client-secret';
 
 export interface OAuthProvider {
   name: string;
@@ -23,16 +24,20 @@ class GoogleOAuthProvider implements OAuthProvider {
   private isConfigured: boolean = false;
 
   constructor() {
-    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
-      this.oauth2Client = new google.auth.OAuth2(
-        GOOGLE_CLIENT_ID,
-        GOOGLE_CLIENT_SECRET,
-        `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/auth/google/callback`
-      );
+    const hasRealCredentials = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
+    
+    this.oauth2Client = new google.auth.OAuth2(
+      GOOGLE_CLIENT_ID,
+      GOOGLE_CLIENT_SECRET,
+      `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/auth/google/callback`
+    );
+    
+    if (hasRealCredentials) {
       this.isConfigured = true;
+      console.log('Gmail OAuth integration enabled with real credentials');
     } else {
-      console.warn('Google OAuth credentials not configured - Gmail integration will be disabled');
       this.isConfigured = false;
+      console.log('Gmail OAuth integration disabled - using development defaults. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for production use.');
     }
   }
 
@@ -154,11 +159,14 @@ class SlackOAuthProvider implements OAuthProvider {
   private isConfigured: boolean = false;
 
   constructor() {
-    if (SLACK_CLIENT_ID && SLACK_CLIENT_SECRET) {
+    const hasRealCredentials = process.env.SLACK_CLIENT_ID && process.env.SLACK_CLIENT_SECRET;
+    
+    if (hasRealCredentials) {
       this.isConfigured = true;
+      console.log('Slack OAuth integration enabled with real credentials');
     } else {
-      console.warn('Slack OAuth credentials not configured - Slack integration will be disabled');
       this.isConfigured = false;
+      console.log('Slack OAuth integration disabled - using development defaults. Set SLACK_CLIENT_ID and SLACK_CLIENT_SECRET for production use.');
     }
   }
 

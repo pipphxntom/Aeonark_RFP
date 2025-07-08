@@ -140,7 +140,7 @@ export default function Onboarding() {
   const progress = (currentStep / 4) * 100;
 
   return (
-    <div className="min-h-screen bg-deep-black flex items-center justify-center px-4">
+    <div className="min-h-screen bg-deep-black flex items-center justify-center px-4" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif' }}>
       <div className="max-w-2xl w-full">
         <motion.div 
           className="text-center mb-8"
@@ -148,7 +148,7 @@ export default function Onboarding() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: 'SF Mono, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>
+          <h1 className="text-4xl font-bold mb-4" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 700 }}>
             Let's calibrate your RFP Engine
           </h1>
           <ProgressBar value={progress} className="mb-8" />
@@ -166,7 +166,7 @@ export default function Onboarding() {
               >
                 <Card className="glass-morphism neon-border">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold mb-6 flex items-center">
+                    <h3 className="text-2xl font-bold mb-6 flex items-center" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 600 }}>
                       <Building className="mr-2 h-6 w-6 text-neon-cyan" />
                       What's your industry?
                     </h3>
@@ -197,7 +197,7 @@ export default function Onboarding() {
                                       onClick={() => field.onChange(industry.value)}
                                     >
                                       <Icon className="h-6 w-6 text-neon-cyan" />
-                                      <span className="text-sm">{industry.label}</span>
+                                      <span className="text-sm" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 500 }}>{industry.label}</span>
                                     </Button>
                                   </motion.div>
                                 );
@@ -222,7 +222,7 @@ export default function Onboarding() {
               >
                 <Card className="glass-morphism neon-border">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold mb-6 flex items-center">
+                    <h3 className="text-2xl font-bold mb-6 flex items-center" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 600 }}>
                       <Users className="mr-2 h-6 w-6 text-neon-cyan" />
                       What's your company size?
                     </h3>
@@ -250,7 +250,7 @@ export default function Onboarding() {
                                     }`}
                                     onClick={() => field.onChange(size.value)}
                                   >
-                                    {size.label}
+                                    <span style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 500 }}>{size.label}</span>
                                   </Button>
                                 </motion.div>
                               ))}
@@ -274,7 +274,7 @@ export default function Onboarding() {
               >
                 <Card className="glass-morphism neon-border">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold mb-6 flex items-center">
+                    <h3 className="text-2xl font-bold mb-6 flex items-center" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 600 }}>
                       <Handshake className="mr-2 h-6 w-6 text-neon-cyan" />
                       What services do you offer?
                     </h3>
@@ -327,7 +327,7 @@ export default function Onboarding() {
               >
                 <Card className="glass-morphism neon-border">
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold mb-6 flex items-center">
+                    <h3 className="text-2xl font-bold mb-6 flex items-center" style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 600 }}>
                       <Palette className="mr-2 h-6 w-6 text-neon-cyan" />
                       What's your preferred tone?
                     </h3>
@@ -355,7 +355,7 @@ export default function Onboarding() {
                                     }`}
                                     onClick={() => field.onChange(tone.value)}
                                   >
-                                    {tone.label}
+                                    <span style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 500 }}>{tone.label}</span>
                                   </Button>
                                 </motion.div>
                               ))}
@@ -386,7 +386,9 @@ export default function Onboarding() {
                 {onboardingMutation.isPending ? (
                   <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2" />
                 ) : null}
-                {currentStep === 4 ? 'Finish Setup & Launch Dashboard' : 'Next Step'}
+                <span style={{ fontFamily: '"SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', fontWeight: 700 }}>
+                  {currentStep === 4 ? 'Finish Setup & Launch Dashboard' : 'Next Step'}
+                </span>
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </motion.div>

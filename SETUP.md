@@ -38,6 +38,22 @@ The OTP email system uses Resend:
 3. Add it to Replit Secrets as `RESEND_API_KEY`
 4. Email functionality will work automatically
 
+## OAuth Integration (Optional)
+
+Gmail and Slack integrations work automatically in development mode. For production use:
+
+### Gmail Integration
+1. Create Google Cloud project and enable Gmail API
+2. Set up OAuth 2.0 credentials
+3. Add `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` to Replit Secrets
+
+### Slack Integration  
+1. Create Slack app with OAuth permissions
+2. Add redirect URLs for your domain
+3. Add `SLACK_CLIENT_ID` and `SLACK_CLIENT_SECRET` to Replit Secrets
+
+**Note**: Without these credentials, integrations show "Not Configured" status but the app works normally.
+
 ## Features
 
 - **AI Proposal Generation** - Upload RFPs and generate professional proposals
