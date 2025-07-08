@@ -1,7 +1,10 @@
 import { Resend } from 'resend';
 
-if (!process.env.RESEND_API_KEY) {
-  console.warn("RESEND_API_KEY not found, email functionality will be disabled");
+const resendApiKey = process.env.RESEND_API_KEY;
+
+if (!resendApiKey || resendApiKey === 're_your_resend_api_key_here') {
+  console.warn('RESEND_API_KEY not configured, email functionality will be disabled');
+  console.warn('📧 To enable emails: Replace RESEND_API_KEY in .env with your actual Resend API key');
 }
 
 // Only initialize Resend if API key is available
@@ -37,7 +40,7 @@ export async function sendEmail(params: EmailParams): Promise<boolean> {
     ];
 
     let lastError = null;
-    
+
     for (const fromAddress of fromAddresses) {
       try {
         const { data, error } = await resend.emails.send({
@@ -155,20 +158,20 @@ export function generateOtpEmail(otp: string): string {
           <div class="logo">AeonRFP</div>
           <div class="subtitle">AI-Powered Proposal Generation</div>
         </div>
-        
+
         <div class="main-content">
           <h1 style="color: #ffffff; margin-bottom: 20px;">Your Login Code</h1>
           <p class="message">
             Use this 6-digit code to complete your login to AeonRFP:
           </p>
-          
+
           <div class="otp-code">${otp}</div>
-          
+
           <div class="security-note">
             <strong>Security Note:</strong> This code expires in 10 minutes. Never share this code with anyone.
           </div>
         </div>
-        
+
         <div class="footer">
           <p>This code was requested from your AeonRFP account.</p>
           <p>If you didn't request this code, please ignore this email.</p>

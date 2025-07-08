@@ -4,6 +4,6 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
-.env
+# .env - Now tracked for development convenience
 .env.local
 .env.production

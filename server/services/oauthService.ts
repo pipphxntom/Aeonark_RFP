@@ -40,9 +40,9 @@ class GoogleOAuthProvider implements OAuthProvider {
     if (!this.isConfigured || !this.oauth2Client) {
       throw new Error('Google OAuth credentials not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Replit Secrets.');
     }
-    
+
     const state = this.generateState(userId);
-    
+
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
       scope: [
@@ -60,11 +60,11 @@ class GoogleOAuthProvider implements OAuthProvider {
     if (!this.isConfigured || !this.oauth2Client) {
       throw new Error('Google OAuth credentials not configured');
     }
-    
+
     const userId = this.verifyState(state);
-    
+
     const { tokens } = await this.oauth2Client.getToken(code);
-    
+
     if (!tokens.access_token) {
       throw new Error('No access token received');
     }
@@ -89,11 +89,11 @@ class GoogleOAuthProvider implements OAuthProvider {
     if (!this.isConfigured || !this.oauth2Client) {
       throw new Error('Google OAuth credentials not configured');
     }
-    
+
     this.oauth2Client.setCredentials({ refresh_token: refreshToken });
-    
+
     const { credentials } = await this.oauth2Client.refreshAccessToken();
-    
+
     if (!credentials.access_token) {
       throw new Error('Failed to refresh access token');
     }
@@ -104,10 +104,10 @@ class GoogleOAuthProvider implements OAuthProvider {
 
   async getUserInfo(accessToken: string): Promise<any> {
     this.oauth2Client.setCredentials({ access_token: accessToken });
-    
+
     const oauth2 = google.oauth2({ version: 'v2', auth: this.oauth2Client });
     const { data } = await oauth2.userinfo.get();
-    
+
     return data;
   }
 
@@ -118,14 +118,14 @@ class GoogleOAuthProvider implements OAuthProvider {
     const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'fallback-secret')
       .update(payload)
       .digest('hex');
-    
+
     return Buffer.from(`${payload}:${signature}`).toString('base64');
   }
 
   private verifyState(state: string): string {
     const decoded = Buffer.from(state, 'base64').toString();
     const [userId, timestamp, random, signature] = decoded.split(':');
-    
+
     if (!userId || !timestamp || !random || !signature) {
       throw new Error('Invalid state parameter');
     }
@@ -134,7 +134,7 @@ class GoogleOAuthProvider implements OAuthProvider {
     const expectedSignature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'fallback-secret')
       .update(payload)
       .digest('hex');
-    
+
     if (signature !== expectedSignature) {
       throw new Error('Invalid state signature');
     }
@@ -190,7 +190,7 @@ class SlackOAuthProvider implements OAuthProvider {
     if (!this.isConfigured) {
       throw new Error('Slack OAuth credentials not configured');
     }
-    
+
     const userId = this.verifyState(state);
 
     const response = await fetch('https://slack.com/api/oauth.v2.access', {
@@ -242,7 +242,7 @@ class SlackOAuthProvider implements OAuthProvider {
     });
 
     const data = await response.json();
-    
+
     if (!data.ok) {
       throw new Error(`Slack API error: ${data.error}`);
     }
@@ -257,14 +257,14 @@ class SlackOAuthProvider implements OAuthProvider {
     const signature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'fallback-secret')
       .update(payload)
       .digest('hex');
-    
+
     return Buffer.from(`${payload}:${signature}`).toString('base64');
   }
 
   private verifyState(state: string): string {
     const decoded = Buffer.from(state, 'base64').toString();
     const [userId, timestamp, random, signature] = decoded.split(':');
-    
+
     if (!userId || !timestamp || !random || !signature) {
       throw new Error('Invalid state parameter');
     }
@@ -273,7 +273,7 @@ class SlackOAuthProvider implements OAuthProvider {
     const expectedSignature = crypto.createHmac('sha256', process.env.SESSION_SECRET || 'fallback-secret')
       .update(payload)
       .digest('hex');
-    
+
     if (signature !== expectedSignature) {
       throw new Error('Invalid state signature');
     }
@@ -310,7 +310,7 @@ export function isProviderConfigured(provider: string): boolean {
 
 export async function getValidToken(userId: string, provider: string): Promise<string | null> {
   const token = await storage.getOauthToken(userId, provider);
-  
+
   if (!token) {
     return null;
   }

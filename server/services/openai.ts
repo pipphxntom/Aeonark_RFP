@@ -1,8 +1,15 @@
 import OpenAI from "openai";
 import type { Rfp, User } from "@shared/schema";
 
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+const apiKey = process.env.OPENAI_API_KEY;
+
+if (!apiKey || apiKey === 'sk_your_openai_api_key_here') {
+  console.warn('🤖 OPENAI_API_KEY not configured, AI features will be disabled');
+  console.warn('🤖 To enable AI: Replace OPENAI_API_KEY in .env with your actual OpenAI API key');
+}
+
+const openai = new OpenAI({
+  apiKey: apiKey || 'dummy-key',
 });
 
 export interface SmartMatchAnalysis {
@@ -54,7 +61,7 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
       - Description: ${rfp.description || "N/A"}
       - Content: ${rfp.extractedText?.substring(0, 3000) || "N/A"}
       - Deadline: ${rfp.deadline ? new Date(rfp.deadline).toISOString() : "Not specified"}
-      
+
       User Profile:
       - Industry: ${user.industry || "N/A"}
       - Company Size: ${user.companySize || "N/A"}  
@@ -138,7 +145,7 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
     });
 
     const analysis = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     // Validate and normalize scores
     const breakdown = analysis.breakdown || {};
     const validatedBreakdown = {
@@ -183,7 +190,7 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
     };
   } catch (error) {
     console.error("Error analyzing RFP compatibility:", error);
-    
+
     // Provide fallback analysis when OpenAI quota is exceeded
     if (error.status === 429) {
       console.log("OpenAI quota exceeded, providing fallback analysis");
@@ -219,7 +226,7 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
         }
       };
     }
-    
+
     throw new Error("Failed to analyze RFP compatibility");
   }
 }
@@ -228,28 +235,28 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
   try {
     const prompt = `
       Generate a professional proposal based on this RFP and user profile.
-      
+
       RFP Details:
       - Title: ${rfp.title}
       - Description: ${rfp.description || "N/A"}
       - Content: ${rfp.extractedText?.substring(0, 3000) || "N/A"}
       - Deadline: ${rfp.deadline || "N/A"}
-      
+
       User Profile:
       - Industry: ${user.industry || "N/A"}
       - Company Size: ${user.companySize || "N/A"}
       - Services Offered: ${user.servicesOffered?.join(", ") || "N/A"}
       - Tone Preference: ${user.tonePreference || "Professional"}
-      
+
       Generate a comprehensive proposal with these sections:
       1. Executive Summary - Compelling overview highlighting key value propositions
       2. Scope of Work - Detailed breakdown of deliverables and phases
       3. Timeline - Realistic project timeline with milestones
       4. Legal Terms - Standard terms and conditions
       5. Pricing - Itemized pricing with clear descriptions
-      
+
       Use a ${user.tonePreference || "professional"} tone throughout.
-      
+
       Respond with JSON in this format:
       {
         "executiveSummary": "detailed executive summary",
@@ -287,7 +294,7 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
     });
 
     const proposalData = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       executiveSummary: proposalData.executiveSummary || "Executive summary not generated",
       scopeOfWork: proposalData.scopeOfWork || "Scope of work not generated",
@@ -301,19 +308,19 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
     };
   } catch (error) {
     console.error("Error generating proposal:", error);
-    
+
     // Provide fallback proposal when OpenAI quota is exceeded
     if (error.status === 429) {
       console.log("OpenAI quota exceeded, providing fallback proposal");
       return {
         executiveSummary: `We are pleased to submit our proposal for this project. With our expertise in ${user.industry} and proven track record in delivering high-quality solutions, we are confident in our ability to meet your requirements and exceed expectations. Our team brings deep technical knowledge and a commitment to excellence that ensures project success.`,
-        
+
         scopeOfWork: `**Project Scope:**\n\n1. **Requirements Analysis & Planning**\n   - Detailed review of all requirements\n   - Technical architecture design\n   - Project timeline development\n\n2. **Implementation Phase**\n   - Core system development\n   - Integration with existing systems\n   - Quality assurance and testing\n\n3. **Deployment & Support**\n   - Production deployment\n   - User training and documentation\n   - Ongoing support and maintenance\n\n**Deliverables:**\n- Complete solution as specified\n- Documentation and training materials\n- Post-deployment support`,
-        
+
         timeline: `**Project Timeline:**\n\n**Phase 1: Planning & Design (2-3 weeks)**\n- Requirements gathering\n- Technical specifications\n- Design approval\n\n**Phase 2: Development (8-12 weeks)**\n- Core development\n- Testing and quality assurance\n- Client reviews and feedback\n\n**Phase 3: Deployment (1-2 weeks)**\n- Production setup\n- User training\n- Go-live support\n\n**Total Duration:** 11-17 weeks\n\n*Note: Timeline may be adjusted based on specific requirements and client feedback cycles.*`,
-        
+
         legalTerms: `**Terms and Conditions:**\n\n1. **Payment Terms:** Net 30 days from invoice date\n2. **Intellectual Property:** Client retains all rights to custom developments\n3. **Confidentiality:** All project information will be kept strictly confidential\n4. **Warranties:** 90-day warranty on all deliverables\n5. **Limitation of Liability:** Limited to the total contract value\n6. **Termination:** 30-day notice period required\n\n*These are standard terms and can be adjusted based on your requirements and legal preferences.*`,
-        
+
         pricing: {
           items: [
             {
@@ -342,7 +349,7 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
         }
       };
     }
-    
+
     throw new Error("Failed to generate proposal");
   }
 }
@@ -419,26 +426,26 @@ Include standard clauses for payment terms, intellectual property, liability, an
     return { content };
   } catch (error: any) {
     console.error("Error regenerating section:", error);
-    
+
     // Provide fallback content when OpenAI quota is exceeded
     if (error.status === 429) {
       console.log("OpenAI quota exceeded, providing fallback content");
-      
+
       const fallbackContent: Record<string, string> = {
         "executive-summary": "We are excited to propose our comprehensive solution for your project. Our team brings extensive experience and proven methodologies to ensure successful delivery. With our deep understanding of your industry and technical requirements, we are confident in providing a solution that exceeds your expectations and delivers measurable value.",
-        
+
         "scope-of-work": "**Updated Scope of Work:**\n\n• Comprehensive analysis and requirements gathering\n• Solution design and architecture\n• Implementation with best practices\n• Quality assurance and testing\n• Deployment and go-live support\n• Documentation and knowledge transfer\n\nThis updated scope addresses your specific needs while maintaining our commitment to quality and timely delivery.",
-        
+
         "timeline": "**Revised Timeline:**\n\n**Week 1-2:** Project initiation and planning\n**Week 3-8:** Core development and implementation\n**Week 9-10:** Testing and quality assurance\n**Week 11-12:** Deployment and training\n\nThis timeline has been optimized based on project requirements and resource availability.",
-        
+
         "legal-terms": "**Updated Terms:**\n\n• Payment: Net 30 days\n• Warranty: 90 days on deliverables\n• Intellectual Property: Client ownership of custom work\n• Confidentiality: Full NDA coverage\n• Support: Included during implementation\n\nThese terms reflect industry standards and can be customized to your preferences."
       };
-      
+
       return {
         content: fallbackContent[sectionType] || "Updated content will be provided here. Please review and let us know if you need any modifications."
       };
     }
-    
+
     throw new Error("Failed to regenerate section: " + error.message);
   }
 }
