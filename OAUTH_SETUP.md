@@ -1,7 +1,40 @@
+
 # OAuth Integration Setup Guide
 
 ## Overview
 AeonRFP supports Gmail and Slack integrations for monitoring incoming RFPs and notifications. This guide explains how to set up OAuth credentials permanently across project clones.
+
+## Solving Google OAuth 2.0 Verification Error
+
+If you get "Error 400: invalid_request" with "doesn't comply with Google's OAuth 2.0 policy", follow these steps:
+
+### Option 1: Publish Your OAuth App (Production Ready)
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Navigate to "APIs & Services" → "OAuth consent screen"
+3. Complete all required fields:
+   - App name: "AeonRFP"
+   - User support email: Your email
+   - Developer contact information: Your email
+   - App domain: Your Replit domain
+   - Privacy Policy URL: `https://your-repl-domain/privacy`
+   - Terms of Service URL: `https://your-repl-domain/terms`
+4. Add all required scopes:
+   - `https://www.googleapis.com/auth/gmail.readonly`
+   - `https://www.googleapis.com/auth/userinfo.email`
+   - `https://www.googleapis.com/auth/userinfo.profile`
+5. Click "Publish App" to move from testing to production
+6. Submit for verification if required
+
+### Option 2: Add Test Users (Quick Fix)
+1. In "OAuth consent screen", scroll to "Test users"
+2. Click "Add Users"
+3. Add your email and any other emails that need access
+4. Save changes
+
+### Option 3: Use Internal App (Organization Only)
+1. In "OAuth consent screen", select "Internal" user type
+2. This limits access to your Google Workspace organization
+3. No verification required, but only works for your organization
 
 ## Gmail Integration Setup
 
@@ -93,6 +126,11 @@ OPENAI_API_KEY=your_openai_key
 **"Invalid redirect URI" Error**
 - Update redirect URIs in OAuth provider settings
 - Use exact Replit domain (check your current URL)
+
+**"OAuth doesn't comply with Google's OAuth 2.0 policy" Error**
+- Follow the publishing steps above
+- Add yourself as a test user for immediate access
+- Ensure all required OAuth consent screen fields are completed
 
 **"OAuth failed" Error**
 - Check server logs for detailed error messages
