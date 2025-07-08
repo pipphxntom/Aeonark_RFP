@@ -28,10 +28,12 @@ interface IntegrationStatus {
   gmail: {
     connected: boolean;
     email?: string;
+    configured: boolean;
   };
   slack: {
     connected: boolean;
     team?: string;
+    configured: boolean;
   };
 }
 
@@ -79,14 +81,24 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
         }
       }, 1000);
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("OAuth connection error:", error);
-      toast({
-        title: "Connection Failed",
-        description: "Failed to connect to the service. Please try again.",
-        variant: "destructive"
-      });
       setIsConnecting(null);
+      
+      // Handle specific error cases
+      if (error?.message?.includes('not configured')) {
+        toast({
+          title: "OAuth Not Configured",
+          description: error.message || "Please configure OAuth credentials in Replit Secrets.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Connection Failed",
+          description: "Unable to connect to the service. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   });
 
@@ -234,6 +246,11 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
                 : integration.key === 'slack' 
                   ? integrations?.slack?.connected 
                   : false;
+              const isConfigured = integration.key === 'gmail' 
+                ? integrations?.gmail?.configured !== false
+                : integration.key === 'slack' 
+                  ? integrations?.slack?.configured !== false
+                  : true;
               const isConnectingThis = isConnecting === integration.key;
               const isComingSoon = integration.comingSoon;
 
@@ -308,23 +325,36 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
                           </Button>
                         </div>
                       ) : (
-                        <Button 
-                          className="w-full bg-gradient-to-r from-[#00FFA3] to-[#00D4FF] text-black font-medium hover:from-[#00D4FF] hover:to-[#00FFA3]"
-                          onClick={() => handleConnect(integration.key)}
-                          disabled={isConnectingThis || connectMutation.isPending}
-                        >
-                          {isConnectingThis ? (
-                            <>
-                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                              Connecting...
-                            </>
+                        <div className="space-y-2">
+                          {!isConfigured ? (
+                            <div className="text-center space-y-2">
+                              <Badge variant="secondary" className="bg-orange-500/20 text-orange-400 border-orange-500/30">
+                                Not Configured
+                              </Badge>
+                              <p className="text-xs text-gray-400">
+                                OAuth credentials not set. Add {integration.key === 'gmail' ? 'GOOGLE_CLIENT_ID & GOOGLE_CLIENT_SECRET' : 'SLACK_CLIENT_ID & SLACK_CLIENT_SECRET'} to Replit Secrets.
+                              </p>
+                            </div>
                           ) : (
-                            <>
-                              <ExternalLink className="h-4 w-4 mr-2" />
-                              Connect
-                            </>
+                            <Button 
+                              className="w-full bg-gradient-to-r from-[#00FFA3] to-[#00D4FF] text-black font-medium hover:from-[#00D4FF] hover:to-[#00FFA3]"
+                              onClick={() => handleConnect(integration.key)}
+                              disabled={isConnectingThis || connectMutation.isPending}
+                            >
+                              {isConnectingThis ? (
+                                <>
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                  Connecting...
+                                </>
+                              ) : (
+                                <>
+                                  <ExternalLink className="h-4 w-4 mr-2" />
+                                  Connect
+                                </>
+                              )}
+                            </Button>
                           )}
-                        </Button>
+                        </div>
                       )}
                     </CardContent>
                   </Card>

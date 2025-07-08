@@ -599,7 +599,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Invalid provider" });
       }
 
-      const { oauthProviders } = await import('./services/oauthService');
+      const { oauthProviders, isProviderConfigured } = await import('./services/oauthService');
+      
+      // Check if provider is configured
+      if (!isProviderConfigured(provider)) {
+        const missingVars = provider === 'gmail' 
+          ? ['GOOGLE_CLIENT_ID', 'GOOGLE_CLIENT_SECRET']
+          : ['SLACK_CLIENT_ID', 'SLACK_CLIENT_SECRET'];
+        
+        return res.status(400).json({ 
+          error: `${provider} OAuth not configured`, 
+          message: `Please set ${missingVars.join(' and ')} in Replit Secrets to enable ${provider} integration.`,
+          missingVariables: missingVars
+        });
+      }
+
       const authUrl = oauthProviders[provider as keyof typeof oauthProviders].getAuthUrl(userId);
       
       res.json({ authUrl });
@@ -637,6 +651,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/oauth/status", isAuthenticated, async (req, res) => {
     try {
       const userId = req.user!.claims.sub;
+      const { isProviderConfigured } = await import('./services/oauthService');
       
       const gmailToken = await storage.getOauthToken(userId, 'gmail');
       const slackToken = await storage.getOauthToken(userId, 'slack');
@@ -644,11 +659,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({
         gmail: {
           connected: !!gmailToken,
-          email: gmailToken?.tokenData?.email || null
+          email: gmailToken?.tokenData?.email || null,
+          configured: isProviderConfigured('gmail')
         },
         slack: {
           connected: !!slackToken,
-          team: slackToken?.tokenData?.team?.name || null
+          team: slackToken?.tokenData?.team?.name || null,
+          configured: isProviderConfigured('slack')
         }
       });
     } catch (error) {

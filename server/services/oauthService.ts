@@ -19,21 +19,28 @@ export interface OAuthProvider {
 
 class GoogleOAuthProvider implements OAuthProvider {
   name = 'gmail';
-  private oauth2Client: OAuth2Client;
+  private oauth2Client: OAuth2Client | null = null;
+  private isConfigured: boolean = false;
 
   constructor() {
-    if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
-      throw new Error('Google OAuth credentials not configured');
+    if (GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET) {
+      this.oauth2Client = new google.auth.OAuth2(
+        GOOGLE_CLIENT_ID,
+        GOOGLE_CLIENT_SECRET,
+        `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/auth/google/callback`
+      );
+      this.isConfigured = true;
+    } else {
+      console.warn('Google OAuth credentials not configured - Gmail integration will be disabled');
+      this.isConfigured = false;
     }
-    
-    this.oauth2Client = new google.auth.OAuth2(
-      GOOGLE_CLIENT_ID,
-      GOOGLE_CLIENT_SECRET,
-      `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/auth/google/callback`
-    );
   }
 
   getAuthUrl(userId: string): string {
+    if (!this.isConfigured || !this.oauth2Client) {
+      throw new Error('Google OAuth credentials not configured. Please set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Replit Secrets.');
+    }
+    
     const state = this.generateState(userId);
     
     return this.oauth2Client.generateAuthUrl({
@@ -50,6 +57,10 @@ class GoogleOAuthProvider implements OAuthProvider {
   }
 
   async exchangeCodeForTokens(code: string, state: string): Promise<OauthToken> {
+    if (!this.isConfigured || !this.oauth2Client) {
+      throw new Error('Google OAuth credentials not configured');
+    }
+    
     const userId = this.verifyState(state);
     
     const { tokens } = await this.oauth2Client.getToken(code);
@@ -75,6 +86,10 @@ class GoogleOAuthProvider implements OAuthProvider {
   }
 
   async refreshTokens(refreshToken: string): Promise<OauthToken> {
+    if (!this.isConfigured || !this.oauth2Client) {
+      throw new Error('Google OAuth credentials not configured');
+    }
+    
     this.oauth2Client.setCredentials({ refresh_token: refreshToken });
     
     const { credentials } = await this.oauth2Client.refreshAccessToken();
@@ -136,10 +151,20 @@ class GoogleOAuthProvider implements OAuthProvider {
 
 class SlackOAuthProvider implements OAuthProvider {
   name = 'slack';
+  private isConfigured: boolean = false;
+
+  constructor() {
+    if (SLACK_CLIENT_ID && SLACK_CLIENT_SECRET) {
+      this.isConfigured = true;
+    } else {
+      console.warn('Slack OAuth credentials not configured - Slack integration will be disabled');
+      this.isConfigured = false;
+    }
+  }
 
   getAuthUrl(userId: string): string {
-    if (!SLACK_CLIENT_ID) {
-      throw new Error('Slack OAuth credentials not configured');
+    if (!this.isConfigured) {
+      throw new Error('Slack OAuth credentials not configured. Please set SLACK_CLIENT_ID and SLACK_CLIENT_SECRET in Replit Secrets.');
     }
 
     const state = this.generateState(userId);
@@ -162,6 +187,10 @@ class SlackOAuthProvider implements OAuthProvider {
   }
 
   async exchangeCodeForTokens(code: string, state: string): Promise<OauthToken> {
+    if (!this.isConfigured) {
+      throw new Error('Slack OAuth credentials not configured');
+    }
+    
     const userId = this.verifyState(state);
 
     const response = await fetch('https://slack.com/api/oauth.v2.access', {
@@ -258,10 +287,26 @@ class SlackOAuthProvider implements OAuthProvider {
   }
 }
 
+// Initialize providers safely
+const gmailProvider = new GoogleOAuthProvider();
+const slackProvider = new SlackOAuthProvider();
+
 export const oauthProviders = {
-  gmail: new GoogleOAuthProvider(),
-  slack: new SlackOAuthProvider()
+  gmail: gmailProvider,
+  slack: slackProvider
 };
+
+// Export a function to check if a provider is configured
+export function isProviderConfigured(provider: string): boolean {
+  switch (provider) {
+    case 'gmail':
+      return (gmailProvider as any).isConfigured;
+    case 'slack':
+      return (slackProvider as any).isConfigured;
+    default:
+      return false;
+  }
+}
 
 export async function getValidToken(userId: string, provider: string): Promise<string | null> {
   const token = await storage.getOauthToken(userId, provider);
