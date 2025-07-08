@@ -27,9 +27,14 @@ class GoogleOAuthProvider implements OAuthProvider {
     const hasRealCredentials = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
     
     // Use proper redirect URI format for OAuth 2.0 compliance
-    const redirectUri = process.env.REPLIT_DOMAINS 
-      ? `${process.env.REPLIT_DOMAINS}/api/auth/google/callback`
-      : 'http://localhost:5000/api/auth/google/callback';
+    // Ensure HTTPS for published apps and handle multiple domains
+    let redirectUri = 'http://localhost:5000/api/auth/google/callback';
+    
+    if (process.env.REPLIT_DOMAINS) {
+      // Handle published Replit app domains (always HTTPS)
+      const domain = process.env.REPLIT_DOMAINS.replace(/^https?:\/\//, '');
+      redirectUri = `https://${domain}/api/auth/google/callback`;
+    }
     
     this.oauth2Client = new google.auth.OAuth2(
       GOOGLE_CLIENT_ID,
@@ -63,7 +68,8 @@ class GoogleOAuthProvider implements OAuthProvider {
       state,
       prompt: 'consent',
       response_type: 'code',
-      include_granted_scopes: true
+      include_granted_scopes: true,
+      approval_prompt: 'force'
     });
   }
 
