@@ -26,10 +26,15 @@ class GoogleOAuthProvider implements OAuthProvider {
   constructor() {
     const hasRealCredentials = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
     
+    // Use proper redirect URI format for OAuth 2.0 compliance
+    const redirectUri = process.env.REPLIT_DOMAINS 
+      ? `${process.env.REPLIT_DOMAINS}/api/auth/google/callback`
+      : 'http://localhost:5000/api/auth/google/callback';
+    
     this.oauth2Client = new google.auth.OAuth2(
       GOOGLE_CLIENT_ID,
       GOOGLE_CLIENT_SECRET,
-      `${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/api/auth/google/callback`
+      redirectUri
     );
     
     if (hasRealCredentials) {
@@ -52,12 +57,13 @@ class GoogleOAuthProvider implements OAuthProvider {
       access_type: 'offline',
       scope: [
         'https://www.googleapis.com/auth/gmail.readonly',
-        'https://www.googleapis.com/auth/gmail.modify',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile'
       ],
       state,
-      prompt: 'consent'
+      prompt: 'consent',
+      response_type: 'code',
+      include_granted_scopes: true
     });
   }
 
