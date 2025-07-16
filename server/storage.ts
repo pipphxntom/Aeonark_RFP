@@ -8,6 +8,8 @@ import {
   analyticsEvents,
   oauthTokens,
   emailMonitoring,
+  clauseTemplates,
+  smartMatchQueries,
   type User,
   type UpsertUser,
   type InsertRfp,
@@ -26,6 +28,10 @@ import {
   type OauthToken,
   type InsertEmailMonitoring,
   type EmailMonitoring,
+  type InsertClauseTemplate,
+  type ClauseTemplate,
+  type InsertSmartMatchQuery,
+  type SmartMatchQuery,
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and, like, sql, count } from "drizzle-orm";
@@ -86,6 +92,19 @@ export interface IStorage {
   createEmailMonitoring(monitoring: InsertEmailMonitoring): Promise<EmailMonitoring>;
   getEmailMonitoring(userId: string, provider?: string): Promise<EmailMonitoring[]>;
   markEmailProcessed(id: number): Promise<void>;
+  
+  // SmartMatch clause operations
+  createClauseTemplate(template: InsertClauseTemplate): Promise<ClauseTemplate>;
+  getClauseTemplates(userId: string): Promise<ClauseTemplate[]>;
+  getClauseTemplateById(id: number): Promise<ClauseTemplate | undefined>;
+  updateClauseTemplate(id: number, data: Partial<InsertClauseTemplate>): Promise<ClauseTemplate>;
+  deleteClauseTemplate(id: number): Promise<void>;
+  incrementClauseUsage(id: number): Promise<void>;
+  
+  // SmartMatch query operations
+  createSmartMatchQuery(query: InsertSmartMatchQuery): Promise<SmartMatchQuery>;
+  getSmartMatchQueries(userId: string): Promise<SmartMatchQuery[]>;
+  getSmartMatchQueryById(id: number): Promise<SmartMatchQuery | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -382,6 +401,79 @@ export class DatabaseStorage implements IStorage {
       .update(emailMonitoring)
       .set({ processed: true })
       .where(eq(emailMonitoring.id, id));
+  }
+
+  // SmartMatch clause operations
+  async createClauseTemplate(template: InsertClauseTemplate): Promise<ClauseTemplate> {
+    const [created] = await db
+      .insert(clauseTemplates)
+      .values(template)
+      .returning();
+    return created;
+  }
+
+  async getClauseTemplates(userId: string): Promise<ClauseTemplate[]> {
+    return await db
+      .select()
+      .from(clauseTemplates)
+      .where(and(eq(clauseTemplates.userId, userId), eq(clauseTemplates.isActive, true)))
+      .orderBy(desc(clauseTemplates.createdAt));
+  }
+
+  async getClauseTemplateById(id: number): Promise<ClauseTemplate | undefined> {
+    const [template] = await db
+      .select()
+      .from(clauseTemplates)
+      .where(eq(clauseTemplates.id, id));
+    return template;
+  }
+
+  async updateClauseTemplate(id: number, data: Partial<InsertClauseTemplate>): Promise<ClauseTemplate> {
+    const [updated] = await db
+      .update(clauseTemplates)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(clauseTemplates.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteClauseTemplate(id: number): Promise<void> {
+    await db
+      .update(clauseTemplates)
+      .set({ isActive: false })
+      .where(eq(clauseTemplates.id, id));
+  }
+
+  async incrementClauseUsage(id: number): Promise<void> {
+    await db
+      .update(clauseTemplates)
+      .set({ usageCount: sql`${clauseTemplates.usageCount} + 1` })
+      .where(eq(clauseTemplates.id, id));
+  }
+
+  // SmartMatch query operations
+  async createSmartMatchQuery(query: InsertSmartMatchQuery): Promise<SmartMatchQuery> {
+    const [created] = await db
+      .insert(smartMatchQueries)
+      .values(query)
+      .returning();
+    return created;
+  }
+
+  async getSmartMatchQueries(userId: string): Promise<SmartMatchQuery[]> {
+    return await db
+      .select()
+      .from(smartMatchQueries)
+      .where(eq(smartMatchQueries.userId, userId))
+      .orderBy(desc(smartMatchQueries.createdAt));
+  }
+
+  async getSmartMatchQueryById(id: number): Promise<SmartMatchQuery | undefined> {
+    const [query] = await db
+      .select()
+      .from(smartMatchQueries)
+      .where(eq(smartMatchQueries.id, id));
+    return query;
   }
 }
 

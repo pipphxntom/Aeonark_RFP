@@ -8,6 +8,7 @@ import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
 import Onboarding from "@/pages/Onboarding";
+import SmartMatch from "@/pages/SmartMatch";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -43,6 +44,9 @@ function Router() {
       </Route>
       <Route path="/home">
         {isAuthenticated && (user as any)?.isOnboardingComplete ? <Home /> : <Landing />}
+      </Route>
+      <Route path="/smartmatch">
+        {isAuthenticated && (user as any)?.isOnboardingComplete ? <SmartMatch /> : <Landing />}
       </Route>
       <Route component={NotFound} />
     </Switch>

@@ -15,6 +15,13 @@
       "when": 1751964083095,
       "tag": "0001_classy_zarek",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1752709298140,
+      "tag": "0002_huge_george_stacy",
+      "breakpoints": true
     }
   ]
 }

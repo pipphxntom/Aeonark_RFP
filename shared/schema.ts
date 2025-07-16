@@ -71,6 +71,33 @@ export const smartMatches = pgTable("smart_matches", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Clause templates for SmartMatch
+export const clauseTemplates = pgTable("clause_templates", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  title: text("title").notNull(),
+  body: text("body").notNull(),
+  category: varchar("category"), // security, compliance, pricing, etc.
+  tags: text("tags").array(),
+  embedding: text("embedding"), // JSON string of vector embedding
+  usageCount: integer("usage_count").default(0),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// SmartMatch query results
+export const smartMatchQueries = pgTable("smart_match_queries", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  queryText: text("query_text").notNull(),
+  queryType: varchar("query_type").notNull(), // text, pdf
+  modelUsed: varchar("model_used").notNull(), // openai, claude, gemini, deepseek
+  embedding: text("embedding"), // JSON string of query embedding
+  results: jsonb("results"), // matched clauses with scores
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Generated proposals
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
@@ -167,6 +194,8 @@ export const usersRelations = relations(users, ({ many }) => ({
   analyticsEvents: many(analyticsEvents),
   oauthTokens: many(oauthTokens),
   emailMonitoring: many(emailMonitoring),
+  clauseTemplates: many(clauseTemplates),
+  smartMatchQueries: many(smartMatchQueries),
 }));
 
 export const rfpsRelations = relations(rfps, ({ one, many }) => ({
@@ -239,6 +268,20 @@ export const emailMonitoringRelations = relations(emailMonitoring, ({ one }) => 
   }),
 }));
 
+export const clauseTemplatesRelations = relations(clauseTemplates, ({ one }) => ({
+  user: one(users, {
+    fields: [clauseTemplates.userId],
+    references: [users.id],
+  }),
+}));
+
+export const smartMatchQueriesRelations = relations(smartMatchQueries, ({ one }) => ({
+  user: one(users, {
+    fields: [smartMatchQueries.userId],
+    references: [users.id],
+  }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRfpSchema = createInsertSchema(rfps).omit({ id: true, createdAt: true, updatedAt: true });
@@ -249,6 +292,8 @@ export const insertMemoryClauseSchema = createInsertSchema(memoryClauses).omit({
 export const insertAnalyticsEventSchema = createInsertSchema(analyticsEvents).omit({ id: true, timestamp: true });
 export const insertOauthTokenSchema = createInsertSchema(oauthTokens).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertEmailMonitoringSchema = createInsertSchema(emailMonitoring).omit({ id: true, createdAt: true });
+export const insertClauseTemplateSchema = createInsertSchema(clauseTemplates).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertSmartMatchQuerySchema = createInsertSchema(smartMatchQueries).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -269,3 +314,7 @@ export type InsertOauthToken = z.infer<typeof insertOauthTokenSchema>;
 export type OauthToken = typeof oauthTokens.$inferSelect;
 export type InsertEmailMonitoring = z.infer<typeof insertEmailMonitoringSchema>;
 export type EmailMonitoring = typeof emailMonitoring.$inferSelect;
+export type InsertClauseTemplate = z.infer<typeof insertClauseTemplateSchema>;
+export type ClauseTemplate = typeof clauseTemplates.$inferSelect;
+export type InsertSmartMatchQuery = z.infer<typeof insertSmartMatchQuerySchema>;
+export type SmartMatchQuery = typeof smartMatchQueries.$inferSelect;

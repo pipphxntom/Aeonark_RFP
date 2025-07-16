@@ -1,0 +1,78 @@
+You are building the SmartMatch engine for a SaaS product named AeonRFP — a proposal and contract automation tool for enterprises and consultants. This SmartMatch module will intelligently analyze an uploaded RFP, query, or contract, and match it to the most relevant clause templates, answers, or documents in a database.
+
+Here’s what you need to build (split into backend logic + supporting frontend API endpoint):
+
+💡 Functionality Overview
+Users can upload RFPs or paste questions
+
+The engine analyzes the input and matches it to the best-fit clauses/templates from a Supabase DB
+
+The user can select which LLM model to use: OpenAI GPT-4, Google Gemini, DeepSeek, or Claude
+
+Matching happens via vector embeddings and a scoring mechanism
+
+Ranks the top 5 matches and explains why it picked them
+
+📦 Tech Stack and Structure
+Backend:
+
+Node.js + Express (or Next.js API route if easier)
+
+Vector embeddings via OpenAI/Gemini/DeepSeek (use OpenAI as default fallback)
+
+Supabase for clause storage and retrieval
+
+EmailerSend or Mailersend integration for OTP (optional)
+
+Use dotenv for environment variable config (e.g., API keys, Supabase URL)
+
+Frontend:
+
+A dropdown for LLM selection
+
+File upload or text input box
+
+Submit button → calls backend
+
+Result: Show top 5 clause matches with score and preview
+
+🧠 SmartMatch Backend: How it should work
+Input Handling:
+
+Accept text input or uploaded document (use PDF parsing via pdf-parse or pdfjs)
+
+Sanitize and chunk the content if needed
+
+Model Choice Logic:
+
+Based on frontend dropdown, load API key and logic for:
+
+OpenAI GPT-4
+
+Claude
+
+DeepSeek
+
+Gemini
+
+Abstract these into a modelRunner.js or llmDispatcher.ts that routes prompt accordingly
+
+Embedding & Vector Matching:
+
+Get embedding of the user query/input (OpenAI or Gemini embedding API)
+
+Fetch existing clause embeddings from Supabase
+
+Compute cosine similarity (or use pgvector extension if Supabase supports)
+
+Rank top 5 closest matches
+
+Response Construction:
+
+Return JSON object: clause title, content, similarity score
+
+Add explanation using chosen LLM:
+
+“Why was this clause selected?”
+
+“How does this clause address the requirement?”

@@ -6,6 +6,8 @@ import { insertRfpSchema, insertSmartMatchSchema, insertProposalSchema } from "@
 import { generateProposal, analyzeRfpCompatibility, regenerateSection } from "./services/openai";
 import { processUploadedFile } from "./services/fileProcessor";
 import { sendEmail, generateOtpEmail } from "./services/emailService";
+import { SmartMatch } from "./smartmatch";
+import { PdfService } from "./smartmatch/pdf";
 import multer from "multer";
 import path from "path";
 
@@ -688,6 +690,106 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error disconnecting OAuth:", error);
       res.status(500).json({ error: "Failed to disconnect OAuth" });
+    }
+  });
+
+  // SmartMatch API Routes
+  app.post('/api/smartmatch', isAuthenticated, upload.single('file'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { query, model = 'openai', limit = 5 } = req.body;
+      
+      let queryText = query;
+      let queryType = 'text';
+      
+      // Handle file upload if provided
+      if (req.file) {
+        const pdfService = new PdfService();
+        
+        // Validate file type
+        if (!await pdfService.validatePdfFile(req.file.path)) {
+          return res.status(400).json({ error: 'Invalid file type. Only PDF files are supported.' });
+        }
+        
+        // Extract text from PDF
+        const extractedText = await pdfService.extractTextFromPdf(req.file.path);
+        queryText = pdfService.cleanExtractedText(extractedText);
+        queryType = 'pdf';
+        
+        // Clean up uploaded file
+        await require('fs').promises.unlink(req.file.path);
+      }
+      
+      if (!queryText) {
+        return res.status(400).json({ error: 'Query text or file is required' });
+      }
+      
+      // Initialize SmartMatch engine
+      const smartMatch = new SmartMatch();
+      
+      // Process the query
+      const result = await smartMatch.match({
+        query: queryText,
+        userId,
+        queryType: queryType as 'text' | 'pdf',
+        model: model as 'openai' | 'claude' | 'gemini' | 'deepseek',
+        limit: parseInt(limit)
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error('SmartMatch error:', error);
+      res.status(500).json({ error: 'Failed to process SmartMatch query', details: error.message });
+    }
+  });
+
+  // Clause template management routes
+  app.get('/api/smartmatch/clauses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const smartMatch = new SmartMatch();
+      
+      const clauses = await smartMatch.getClauseTemplates(userId);
+      res.json(clauses);
+    } catch (error) {
+      console.error('Error fetching clause templates:', error);
+      res.status(500).json({ error: 'Failed to fetch clause templates' });
+    }
+  });
+
+  app.post('/api/smartmatch/clauses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { title, body, category, tags } = req.body;
+      
+      if (!title || !body) {
+        return res.status(400).json({ error: 'Title and body are required' });
+      }
+      
+      const smartMatch = new SmartMatch();
+      await smartMatch.addClauseTemplate(userId, title, body, category, tags);
+      
+      res.json({ success: true, message: 'Clause template created successfully' });
+    } catch (error) {
+      console.error('Error creating clause template:', error);
+      res.status(500).json({ error: 'Failed to create clause template' });
+    }
+  });
+
+  app.post('/api/smartmatch/sample-clauses', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const smartMatch = new SmartMatch();
+      
+      // Create sample clauses for testing
+      const { ClauseService } = await import('./smartmatch/clause');
+      const clauseService = new ClauseService();
+      await clauseService.createSampleClauses(userId);
+      
+      res.json({ success: true, message: 'Sample clauses created successfully' });
+    } catch (error) {
+      console.error('Error creating sample clauses:', error);
+      res.status(500).json({ error: 'Failed to create sample clauses' });
     }
   });
 
