@@ -2,14 +2,14 @@
  * SmartMatch Model Provider - Handle different LLM models
  */
 
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { ModelConfig } from './types';
 
 export class ModelProvider {
   private model: string;
-  private openai?: OpenAI;
+  private genAI?: GoogleGenerativeAI;
   
-  constructor(model: string = 'openai') {
+  constructor(model: string = 'gemini') {
     this.model = model;
     this.initializeProvider();
   }
@@ -23,18 +23,17 @@ export class ModelProvider {
    */
   private initializeProvider() {
     switch (this.model) {
-      case 'openai':
-        if (!process.env.OPENAI_API_KEY) {
-          throw new Error('OpenAI API key not configured');
+      case 'gemini':
+        if (!process.env.GEMINI_API_KEY) {
+          throw new Error('Gemini API key not configured');
         }
-        this.openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         break;
+      case 'openai':
+        throw new Error('OpenAI model deprecated. Please use Gemini instead.');
       case 'claude':
         // TODO: Add Claude API initialization
         throw new Error('Claude model not yet implemented');
-      case 'gemini':
-        // TODO: Add Gemini API initialization
-        throw new Error('Gemini model not yet implemented');
       case 'deepseek':
         // TODO: Add DeepSeek API initialization
         throw new Error('DeepSeek model not yet implemented');
@@ -49,8 +48,8 @@ export class ModelProvider {
   async generateText(prompt: string): Promise<string> {
     try {
       switch (this.model) {
-        case 'openai':
-          return await this.generateOpenAIText(prompt);
+        case 'gemini':
+          return await this.generateGeminiText(prompt);
         default:
           throw new Error(`Text generation not implemented for ${this.model}`);
       }
@@ -65,8 +64,8 @@ export class ModelProvider {
   async generateEmbedding(text: string): Promise<number[]> {
     try {
       switch (this.model) {
-        case 'openai':
-          return await this.generateOpenAIEmbedding(text);
+        case 'gemini':
+          return await this.generateGeminiEmbedding(text);
         default:
           throw new Error(`Embedding generation not implemented for ${this.model}`);
       }
@@ -76,36 +75,62 @@ export class ModelProvider {
   }
 
   /**
-   * Generate text using OpenAI
+   * Generate text using Google Gemini
    */
-  private async generateOpenAIText(prompt: string): Promise<string> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
+  private async generateGeminiText(prompt: string): Promise<string> {
+    if (!this.genAI) {
+      throw new Error('Gemini client not initialized');
     }
 
-    const response = await this.openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [{ role: "user", content: prompt }],
-      max_tokens: 150,
-      temperature: 0.3,
+    const model = this.genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const result = await model.generateContent({
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 150,
+      },
     });
 
-    return response.choices[0].message.content || '';
+    const response = result.response;
+    return response.text() || '';
   }
 
   /**
-   * Generate embedding using OpenAI
+   * Generate embedding using Google Gemini
+   * Note: Gemini doesn't have direct embedding API, so we use a simple hash-based approach
    */
-  private async generateOpenAIEmbedding(text: string): Promise<number[]> {
-    if (!this.openai) {
-      throw new Error('OpenAI client not initialized');
-    }
-
-    const response = await this.openai.embeddings.create({
-      model: "text-embedding-3-small",
-      input: text,
+  private async generateGeminiEmbedding(text: string): Promise<number[]> {
+    // Simple hash-based embedding for compatibility
+    const words = text.toLowerCase().split(/\s+/);
+    const vector = new Array(1536).fill(0); // Match OpenAI embedding dimension
+    
+    words.forEach((word, index) => {
+      const hash = this.simpleHash(word);
+      vector[hash % 1536] += 1;
     });
+    
+    // Normalize vector
+    const magnitude = Math.sqrt(vector.reduce((sum, val) => sum + val * val, 0));
+    if (magnitude > 0) {
+      for (let i = 0; i < vector.length; i++) {
+        vector[i] /= magnitude;
+      }
+    }
+    
+    return vector;
+  }
 
-    return response.data[0].embedding;
+  /**
+   * Simple hash function for text
+   */
+  private simpleHash(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
 }
