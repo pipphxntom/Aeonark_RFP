@@ -1,16 +1,14 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import type { Rfp, User } from "@shared/schema";
 
-const apiKey = process.env.OPENAI_API_KEY;
+const apiKey = process.env.GEMINI_API_KEY;
 
-if (!apiKey || apiKey === 'sk_your_openai_api_key_here') {
-  console.warn('🤖 OPENAI_API_KEY not configured, AI features will be disabled');
-  console.warn('🤖 To enable AI: Replace OPENAI_API_KEY in .env with your actual OpenAI API key');
+if (!apiKey || apiKey === 'your_gemini_api_key_here') {
+  console.warn('🤖 GEMINI_API_KEY not configured, AI features will be disabled');
+  console.warn('🤖 To enable AI: Replace GEMINI_API_KEY in .env with your actual Gemini API key');
 }
 
-const openai = new OpenAI({
-  apiKey: apiKey || 'dummy-key',
-});
+const genAI = new GoogleGenAI(apiKey || 'dummy-key');
 
 export interface SmartMatchAnalysis {
   overallScore: number;
@@ -53,6 +51,8 @@ export interface ProposalContent {
 
 export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<SmartMatchAnalysis> {
   try {
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
     const prompt = `
       Analyze the RFP compatibility using the SmartMatch framework with 6 dimensions:
 
@@ -128,23 +128,34 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
       }
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert RFP analyst using the SmartMatch framework. Analyze compatibility with precise scoring across 6 weighted dimensions. Be thorough and provide actionable insights."
-        },
+    const result = await model.generateContent({
+      contents: [
         {
           role: "user",
-          content: prompt
+          parts: [
+            {
+              text: `You are an expert RFP analyst using the SmartMatch framework. Analyze compatibility with precise scoring across 6 weighted dimensions. Be thorough and provide actionable insights.
+
+${prompt}
+
+Respond only with valid JSON format.`
+            }
+          ]
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
+      generationConfig: {
+        temperature: 0.3,
+        maxOutputTokens: 2000,
+      }
     });
 
-    const analysis = JSON.parse(response.choices[0].message.content || "{}");
+    const responseText = result.response.text();
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid JSON response from Gemini');
+    }
+    
+    const analysis = JSON.parse(jsonMatch[0]);
 
     // Validate and normalize scores
     const breakdown = analysis.breakdown || {};
@@ -277,23 +288,36 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
       }
     `;
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        {
-          role: "system",
-          content: "You are an expert proposal writer with 15+ years of experience. Create compelling, professional proposals that win business."
-        },
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const result = await model.generateContent({
+      contents: [
         {
           role: "user",
-          content: prompt
+          parts: [
+            {
+              text: `You are an expert proposal writer with 15+ years of experience. Create compelling, professional proposals that win business.
+
+${prompt}
+
+Respond only with valid JSON format.`
+            }
+          ]
         }
       ],
-      response_format: { type: "json_object" },
-      temperature: 0.8,
+      generationConfig: {
+        temperature: 0.8,
+        maxOutputTokens: 3000,
+      }
     });
 
-    const proposalData = JSON.parse(response.choices[0].message.content || "{}");
+    const responseText = result.response.text();
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error('Invalid JSON response from Gemini');
+    }
+    
+    const proposalData = JSON.parse(jsonMatch[0]);
 
     return {
       executiveSummary: proposalData.executiveSummary || "Executive summary not generated",
@@ -408,17 +432,26 @@ Include standard clauses for payment terms, intellectual property, liability, an
         throw new Error("Invalid section type");
     }
 
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: prompt }
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    
+    const result = await model.generateContent({
+      contents: [
+        {
+          role: "user",
+          parts: [
+            {
+              text: `${systemPrompt}\n\n${prompt}`
+            }
+          ]
+        }
       ],
-      max_tokens: 1500,
-      temperature: 0.7,
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1500,
+      }
     });
 
-    const content = response.choices[0].message.content;
+    const content = result.response.text();
     if (!content) {
       throw new Error("No content generated");
     }
@@ -427,9 +460,9 @@ Include standard clauses for payment terms, intellectual property, liability, an
   } catch (error: any) {
     console.error("Error regenerating section:", error);
 
-    // Provide fallback content when OpenAI quota is exceeded
-    if (error.status === 429) {
-      console.log("OpenAI quota exceeded, providing fallback content");
+    // Provide fallback content when Gemini quota is exceeded
+    if (error.status === 429 || error.message.includes('quota')) {
+      console.log("Gemini quota exceeded, providing fallback content");
 
       const fallbackContent: Record<string, string> = {
         "executive-summary": "We are excited to propose our comprehensive solution for your project. Our team brings extensive experience and proven methodologies to ensure successful delivery. With our deep understanding of your industry and technical requirements, we are confident in providing a solution that exceeds your expectations and delivers measurable value.",
