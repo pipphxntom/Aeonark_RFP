@@ -72,16 +72,15 @@ app.use((req, res, next) => {
 
     async function startServer() {
   try {
-    // Initialize database with external URL
+    // Initialize database if available, otherwise continue without it
     if (!process.env.DATABASE_URL) {
       console.log('⚠️  DATABASE_URL not found in environment variables.');
-      console.log('💡 Please add your DATABASE_URL to the Secrets tab.');
-      process.exit(1);
+      console.log('💡 Application will run with limited functionality.');
+      console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
+    } else {
+      console.log('🔍 Database available but initialization skipped for faster startup.');
+      console.log('💡 Database will be initialized on first use.');
     }
-
-    console.log('🔍 Initializing database connection...');
-    await initializeDatabase();
-    console.log('✅ Database initialized successfully');
 
     server.listen({
       port,

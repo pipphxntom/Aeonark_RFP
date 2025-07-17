@@ -1,64 +1,26 @@
-
-import { migrate } from 'drizzle-orm/neon-serverless/migrator';
+import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { db } from './db';
 import { readdir } from 'fs/promises';
 import { join } from 'path';
 
 export async function initializeDatabase() {
-  console.log('🔍 Checking database status...');
+  console.log('🔍 Initializing database connection...');
   
-  if (!process.env.DATABASE_URL) {
-    throw new Error('DATABASE_URL environment variable is required');
+  // Skip database setup if no DATABASE_URL is available
+  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
+    console.log('⚠️  DATABASE_URL not found. Application will run without database functionality.');
+    console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
+    return;
   }
-
-  console.log('🔌 Connecting to external database...');
-      });
-
-      if (response.ok) {
-        console.log('✅ PostgreSQL database auto-provisioned successfully!');
-        console.log('🔄 Restarting to load DATABASE_URL...');
-        
-        // Trigger automatic restart to pick up the new DATABASE_URL
-        setTimeout(() => {
-          process.exit(0); // This will trigger Replit to restart the process
-        }, 1000);
-        return;
-      }
-    } catch (error) {
-      // Fallback: Try to provision via shell command
-      console.log('📡 Trying shell-based database provisioning...');
-      
-      try {
-        const { exec } = require('child_process');
-        const util = require('util');
-        const execAsync = util.promisify(exec);
-        
-        // Use Replit CLI to provision database
-        await execAsync('replit db create postgresql --name aeonrfp-db 2>/dev/null || true');
-        
-        console.log('✅ Database provisioned via CLI!');
-        console.log('🔄 Restarting application...');
-        
-        setTimeout(() => {
-          process.exit(0);
-        }, 1000);
-        return;
-        
-      } catch (cliError) {
-        // Final fallback: Auto-create via environment simulation
-        console.log('🛠️  Using environment-based auto-provisioning...');
-        
-        // Set a temporary DATABASE_URL for development
-        const tempDbUrl = `postgresql://postgres:password@localhost:5432/aeonrfp_${Date.now()}`;
-        process.env.DATABASE_URL = tempDbUrl;
-        
-        console.log('⚡ Temporary database configured. Will auto-upgrade on next restart.');
-      }
-    }
-  }
+  
+  console.log('🔌 Connecting to database...');
   
   try {
-    // Check if migrations directory exists
+    // Test database connection
+    const result = await db.execute('SELECT NOW()');
+    console.log('✅ Database connection successful');
+    
+    // Only run migrations if database connection is successful
     const migrationsPath = join(process.cwd(), 'migrations');
     
     try {
@@ -69,27 +31,13 @@ export async function initializeDatabase() {
         console.log('🚀 Running database migrations...');
         await migrate(db, { migrationsFolder: migrationsPath });
         console.log('✅ Database migrations completed successfully');
-      } else {
-        console.log('⚠️  No migrations found. Run `npm run db:generate` first.');
       }
     } catch (error) {
-      console.log('⚠️  No migrations directory found. Database schema may not be initialized.');
-      console.log('💡 Run `npm run db:generate && npm run db:migrate` to set up the database.');
-    }
-    
-    // Test database connection
-    try {
-      const result = await db.execute('SELECT NOW()');
-      console.log('✅ Database connection successful');
-    } catch (dbError) {
-      console.log('⚠️  Database connection failed. Running in development mode.');
-      console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
-      // Don't throw error, allow app to continue without database
+      console.log('⚠️  Migration skipped, database may need setup.');
     }
     
   } catch (error) {
-    console.log('⚠️  Database setup incomplete. Application will run with limited functionality.');
+    console.log('⚠️  Database connection failed. Application will run with limited functionality.');
     console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
-    // Don't throw error, allow app to continue
   }
 }
