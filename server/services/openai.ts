@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { Rfp, User } from "@shared/schema";
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -8,7 +8,7 @@ if (!apiKey || apiKey === 'your_gemini_api_key_here') {
   console.warn('🤖 To enable AI: Replace GEMINI_API_KEY in .env with your actual Gemini API key');
 }
 
-const genAI = new GoogleGenAI(apiKey || 'dummy-key');
+const genAI = new GoogleGenerativeAI(apiKey || 'dummy-key');
 
 export interface SmartMatchAnalysis {
   overallScore: number;
