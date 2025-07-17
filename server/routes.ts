@@ -697,7 +697,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/smartmatch', isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { query, model = 'openai', limit = 5 } = req.body;
+      const { query, model = 'gemini', limit = 5 } = req.body;
       
       let queryText = query;
       let queryType = 'text';

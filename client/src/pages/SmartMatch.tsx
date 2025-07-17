@@ -27,11 +27,13 @@ interface SmartMatchResponse {
   queryId: number;
   processingTime: number;
   model: string;
+  insights: string;
+  totalClauses: number;
 }
 
 export default function SmartMatch() {
   const [query, setQuery] = useState('');
-  const [selectedModel, setSelectedModel] = useState('openai');
+  const [selectedModel, setSelectedModel] = useState('gemini');
   const [file, setFile] = useState<File | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const queryClient = useQueryClient();
@@ -198,9 +200,9 @@ export default function SmartMatch() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="openai">OpenAI GPT-4</SelectItem>
+                    <SelectItem value="gemini">Google Gemini</SelectItem>
+                    <SelectItem value="openai" disabled>OpenAI GPT-4 (Coming Soon)</SelectItem>
                     <SelectItem value="claude" disabled>Claude (Coming Soon)</SelectItem>
-                    <SelectItem value="gemini" disabled>Gemini (Coming Soon)</SelectItem>
                     <SelectItem value="deepseek" disabled>DeepSeek (Coming Soon)</SelectItem>
                   </SelectContent>
                 </Select>
@@ -239,10 +241,23 @@ export default function SmartMatch() {
               SmartMatch Results
             </CardTitle>
             <CardDescription>
-              Found {result.matches.length} matching clauses • Processed in {result.processingTime}ms using {result.model}
+              Found {result.matches.length} matching clauses from {result.totalClauses} total • Processed in {result.processingTime}ms using {result.model}
             </CardDescription>
           </CardHeader>
           <CardContent>
+            {/* AI Insights Section */}
+            {result.insights && (
+              <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/20 to-green-900/20 rounded-lg border border-blue-500/30">
+                <h3 className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  AI Insights
+                </h3>
+                <div className="text-gray-300 text-sm whitespace-pre-wrap">
+                  {result.insights}
+                </div>
+              </div>
+            )}
+
             <div className="space-y-4">
               {result.matches.map((match, index) => (
                 <div key={match.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
