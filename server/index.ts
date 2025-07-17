@@ -90,7 +90,12 @@ app.use((req, res, next) => {
       }
     }
 
-    await initializeDatabase();
+    try {
+      await initializeDatabase();
+    } catch (error) {
+      console.log('⚠️  Database initialization failed. Continuing with limited functionality.');
+      console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
+    }
 
     server.listen({
       port,

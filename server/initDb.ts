@@ -8,7 +8,7 @@ export async function initializeDatabase() {
   console.log('🔍 Checking database status...');
   
   // Check if DATABASE_URL exists, if not, auto-provision PostgreSQL database
-  if (!process.env.DATABASE_URL) {
+  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
     console.log('❌ DATABASE_URL not found. Auto-provisioning PostgreSQL database...');
     
     try {
@@ -90,11 +90,18 @@ export async function initializeDatabase() {
     }
     
     // Test database connection
-    const result = await db.execute('SELECT NOW()');
-    console.log('✅ Database connection successful');
+    try {
+      const result = await db.execute('SELECT NOW()');
+      console.log('✅ Database connection successful');
+    } catch (dbError) {
+      console.log('⚠️  Database connection failed. Running in development mode.');
+      console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
+      // Don't throw error, allow app to continue without database
+    }
     
   } catch (error) {
-    console.error('❌ Database initialization failed:', error);
-    throw error;
+    console.log('⚠️  Database setup incomplete. Application will run with limited functionality.');
+    console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
+    // Don't throw error, allow app to continue
   }
 }
