@@ -72,30 +72,16 @@ app.use((req, res, next) => {
 
     async function startServer() {
   try {
-    // Auto-provision database if needed
+    // Initialize database with external URL
     if (!process.env.DATABASE_URL) {
-      console.log('🔧 No DATABASE_URL found - starting auto-provisioning...');
-
-      const provisioned = await autoProvisionDatabase();
-      if (provisioned) {
-        console.log('⏳ Waiting for database to be ready...');
-        const ready = await waitForDatabase();
-
-        if (!ready) {
-          console.log('⚠️  Auto-provisioning timed out. Manual setup required.');
-          console.log('1. Open Database tab → Create PostgreSQL database');
-          console.log('2. Restart this Repl');
-          process.exit(1);
-        }
-      }
+      console.log('⚠️  DATABASE_URL not found in environment variables.');
+      console.log('💡 Please add your DATABASE_URL to the Secrets tab.');
+      process.exit(1);
     }
 
-    try {
-      await initializeDatabase();
-    } catch (error) {
-      console.log('⚠️  Database initialization failed. Continuing with limited functionality.');
-      console.log('💡 To enable full functionality, set up a PostgreSQL database in Replit.');
-    }
+    console.log('🔍 Initializing database connection...');
+    await initializeDatabase();
+    console.log('✅ Database initialized successfully');
 
     server.listen({
       port,
@@ -106,6 +92,7 @@ app.use((req, res, next) => {
     });
   } catch (error) {
     console.error("Failed to start server:", error);
+    process.exit(1);
   }
 }
 

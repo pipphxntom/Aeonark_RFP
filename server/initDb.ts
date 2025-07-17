@@ -7,23 +7,11 @@ import { join } from 'path';
 export async function initializeDatabase() {
   console.log('🔍 Checking database status...');
   
-  // Check if DATABASE_URL exists, if not, auto-provision PostgreSQL database
-  if (!process.env.DATABASE_URL || process.env.DATABASE_URL.includes('placeholder')) {
-    console.log('❌ DATABASE_URL not found. Auto-provisioning PostgreSQL database...');
-    
-    try {
-      // Use Replit's internal database provisioning API
-      const response = await fetch(`https://${process.env.REPLIT_DEV_DOMAIN}/api/database/provision`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Replit-User-Id': process.env.REPL_OWNER_ID || 'unknown',
-          'X-Replit-Slug': process.env.REPL_SLUG || 'aeonrfp'
-        },
-        body: JSON.stringify({
-          type: 'postgresql',
-          autoStart: true
-        })
+  if (!process.env.DATABASE_URL) {
+    throw new Error('DATABASE_URL environment variable is required');
+  }
+
+  console.log('🔌 Connecting to external database...');
       });
 
       if (response.ok) {
