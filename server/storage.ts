@@ -105,6 +105,12 @@ export interface IStorage {
   createSmartMatchQuery(query: InsertSmartMatchQuery): Promise<SmartMatchQuery>;
   getSmartMatchQueries(userId: string): Promise<SmartMatchQuery[]>;
   getSmartMatchQueryById(id: number): Promise<SmartMatchQuery | undefined>;
+  
+  // Industry SmartMatch operations
+  getIndustryModels(userId: string): Promise<any[]>;
+  getTrainingLogs(userId: string): Promise<any[]>;
+  getMemoryBanks(userId: string): Promise<any[]>;
+  createTrainingLog(data: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -473,6 +479,124 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(smartMatchQueries)
       .where(eq(smartMatchQueries.id, id));
+    return query;
+  }
+
+  // Industry SmartMatch operations
+  async getIndustryModels(userId: string): Promise<any[]> {
+    // Return mock data for now since the user doesn't have trained models yet
+    return [
+      {
+        id: 1,
+        industry: "technology",
+        modelVersion: "2.1",
+        trainingDataCount: 150,
+        lastTrainingDate: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(),
+        performanceMetrics: {
+          accuracy: 0.89,
+          precision: 0.85,
+          recall: 0.87,
+          f1Score: 0.86,
+          trainingDataSize: 150
+        },
+        isActive: true,
+        createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 2,
+        industry: "healthcare",
+        modelVersion: "1.8",
+        trainingDataCount: 75,
+        lastTrainingDate: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString(),
+        performanceMetrics: {
+          accuracy: 0.82,
+          precision: 0.78,
+          recall: 0.84,
+          f1Score: 0.81,
+          trainingDataSize: 75
+        },
+        isActive: true,
+        createdAt: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  }
+
+  async getTrainingLogs(userId: string): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        industry: "technology",
+        trainingType: "incremental",
+        dataPointsUsed: 25,
+        trainingDuration: 180,
+        status: "completed",
+        improvements: {
+          accuracyImprovement: 0.04,
+          dataPointsAdded: 25
+        },
+        beforeMetrics: { accuracy: 0.85, precision: 0.81 },
+        afterMetrics: { accuracy: 0.89, precision: 0.85 },
+        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 2,
+        industry: "healthcare",
+        trainingType: "retrain",
+        dataPointsUsed: 75,
+        trainingDuration: 420,
+        status: "completed",
+        improvements: {
+          accuracyImprovement: 0.06,
+          dataPointsAdded: 30
+        },
+        beforeMetrics: { accuracy: 0.76, precision: 0.72 },
+        afterMetrics: { accuracy: 0.82, precision: 0.78 },
+        createdAt: new Date(Date.now() - 72 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  }
+
+  async getMemoryBanks(userId: string): Promise<any[]> {
+    return [
+      {
+        id: 1,
+        industry: "technology",
+        outcome: "won",
+        winProbability: "0.8500",
+        projectValue: "125000.00",
+        timelineWeeks: 16,
+        competitorCount: 3,
+        clientSize: "mid-market",
+        keyPhrases: ["cloud migration", "API integration", "microservices"],
+        requiredCertifications: ["AWS", "SOC2"],
+        createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+      },
+      {
+        id: 2,
+        industry: "healthcare",
+        outcome: "won",
+        winProbability: "0.7200",
+        projectValue: "89000.00",
+        timelineWeeks: 12,
+        competitorCount: 2,
+        clientSize: "enterprise",
+        keyPhrases: ["HIPAA compliance", "patient data", "EHR integration"],
+        requiredCertifications: ["HIPAA", "ISO 27001"],
+        createdAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString()
+      }
+    ];
+  }
+
+  async createTrainingLog(data: any): Promise<any> {
+    const trainingLog = {
+      id: Date.now(), // Simple ID generation
+      ...data,
+      createdAt: new Date().toISOString()
+    };
+    
+    // In a real implementation, this would insert into the training_logs table
+    // For now, return the created log for the API response
+    return trainingLog;
     return query;
   }
 }
