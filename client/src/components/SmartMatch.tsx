@@ -60,8 +60,23 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
   const analyzeMutation = useMutation({
     mutationFn: async (rfpId: number) => {
       console.log('Making API request for RFP:', rfpId);
-      const response = await apiRequest('POST', `/api/rfps/${rfpId}/analyze`);
+      const response = await fetch(`/api/rfps/${rfpId}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
       const result = await response.json();
+      
+      if (!response.ok) {
+        // Handle document type errors specifically
+        if (result.error && (result.error.includes("Document Type") || result.error.includes("Invoice") || result.error.includes("Non-RFP"))) {
+          throw new Error(`${result.message}\n\n${result.suggestion || ''}`);
+        }
+        throw new Error(result.message || 'Analysis failed');
+      }
+      
       console.log('Analysis result:', result);
       return result;
     },
@@ -75,8 +90,10 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
     },
     onError: (error) => {
       console.error('Analysis error:', error);
+      const isDocumentTypeError = error.message.includes("invoice") || error.message.includes("contract") || error.message.includes("Document Type");
+      
       toast({
-        title: "Analysis Failed",
+        title: isDocumentTypeError ? "Wrong Document Type" : "Analysis Failed",
         description: error.message || "Failed to analyze RFP. Please try again.",
         variant: "destructive",
       });

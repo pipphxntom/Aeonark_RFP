@@ -193,17 +193,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Process the uploaded file
-      const { title, extractedText } = await processUploadedFile(file);
+      // Process the uploaded file with OCR and document type detection
+      const processedFile = await processUploadedFile(file);
       
-      // Create RFP record
+      // Validate document type
+      if (processedFile.documentType === 'INVOICE') {
+        return res.status(400).json({
+          error: "Invoice Document Detected",
+          message: "This appears to be an invoice, not an RFP. Please upload a Request for Proposal document for analysis.",
+          documentType: processedFile.documentType,
+          confidence: processedFile.confidence
+        });
+      }
+
+      if (processedFile.documentType !== 'RFP' && processedFile.confidence > 0.7) {
+        return res.status(400).json({
+          error: "Non-RFP Document Detected", 
+          message: `This appears to be a ${processedFile.documentType.toLowerCase()}, not an RFP. Please upload a Request for Proposal document for analysis.`,
+          documentType: processedFile.documentType,
+          confidence: processedFile.confidence
+        });
+      }
+      
+      // Create RFP record with proper validation
       const rfpData = {
         userId,
-        title: title || file.originalname,
+        title: processedFile.title || file.originalname,
         fileName: file.originalname,
         fileUrl: file.path,
         fileSize: file.size,
-        extractedText,
+        extractedText: processedFile.extractedText,
         status: "uploaded" as const,
       };
 
@@ -263,27 +282,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
 
-      // Analyze RFP compatibility using AI
-      const analysis = await analyzeRfpCompatibility(rfp, user);
-      
-      // Save SmartMatch results  
-      const smartMatch = await storage.createSmartMatch({
-        rfpId,
-        overallScore: analysis.overallScore,
-        industryMatch: analysis.breakdown.industryMatch,
-        servicesMatch: analysis.breakdown.serviceMatch,
-        timelineMatch: analysis.breakdown.timelineAlignment,
-        certificationsMatch: analysis.breakdown.certifications,
-        analysisDetails: {
-          verdict: analysis.verdict,
-          breakdown: analysis.breakdown,
-          details: analysis.details,
-        },
-      });
+      try {
+        // Analyze RFP compatibility using AI
+        const analysis = await analyzeRfpCompatibility(rfp, user);
+        
+        // Save SmartMatch results  
+        const smartMatch = await storage.createSmartMatch({
+          rfpId,
+          overallScore: analysis.overallScore,
+          industryMatch: analysis.breakdown.industryMatch,
+          servicesMatch: analysis.breakdown.serviceMatch,
+          timelineMatch: analysis.breakdown.timelineAlignment,
+          certificationsMatch: analysis.breakdown.certifications,
+          analysisDetails: {
+            verdict: analysis.verdict,
+            breakdown: analysis.breakdown,
+            details: analysis.details,
+          },
+        });
 
-      await storage.updateRfp(rfpId, { status: "analyzed" });
+        await storage.updateRfp(rfpId, { status: "analyzed" });
 
-      res.json(smartMatch);
+        res.json(smartMatch);
+      } catch (analysisError) {
+        // Handle document type errors specifically
+        if (analysisError.message && analysisError.message.includes("Document Type Error")) {
+          return res.status(400).json({
+            error: "Invalid Document Type",
+            message: analysisError.message.replace("Document Type Error: ", ""),
+            suggestion: "Please upload a valid Request for Proposal document for analysis."
+          });
+        }
+        throw analysisError;
+      }
     } catch (error) {
       console.error("Error analyzing RFP:", error);
       res.status(500).json({ message: "Failed to analyze RFP" });

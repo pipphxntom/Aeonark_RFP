@@ -62,13 +62,26 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
       - Full Content: ${rfp.extractedText?.substring(0, 5000) || "N/A"}
       - Deadline: ${rfp.deadline ? new Date(rfp.deadline).toISOString() : "Not specified"}
 
-      FIRST: Extract and summarize the document with these key insights:
-      1. Core Requirements (3-5 key deliverables)
-      2. Project Scope (business context and objectives)
-      3. Expected Deliverables (specific outputs required)
-      4. Budget Range (if mentioned, otherwise analyze project scale)
-      5. Timeline Requirements (project duration and milestones)
-      6. Industry Context (domain, regulations, market position)
+      CRITICAL DOCUMENT VALIDATION:
+      Before analysis, examine if this is actually an RFP:
+      - Invoice indicators: "Invoice Number", "Amount Due", "Payment Terms", "Billing Address", itemized charges, tax amounts
+      - Contract indicators: "Agreement", "Whereas", "Party A/B", "Terms and Conditions", legal signatures
+      - Other indicators: Purchase orders, receipts, proposals, reports, specifications
+      
+      If you detect ANY non-RFP document type, respond with:
+      "DOCUMENT_TYPE_ERROR: This appears to be a [document type], not an RFP"
+
+      DOCUMENT CONTENT ANALYSIS:
+      - Title: ${rfp.title}
+      - Content: ${rfp.extractedText?.substring(0, 5000) || "N/A"}
+      
+      If this IS a valid RFP document, extract these insights:
+      1. Core Requirements (3-5 key deliverables from the RFP)
+      2. Project Scope (what the client wants to achieve)
+      3. Expected Deliverables (specific outputs they're requesting)
+      4. Budget Range (if mentioned, otherwise estimate project scale)
+      5. Timeline Requirements (project duration and key dates)
+      6. Industry Context (domain expertise needed)
 
       User Profile:
       - Industry: ${user.industry || "N/A"}
@@ -176,6 +189,12 @@ Respond only with valid JSON format.`
 
     const responseText = result.response.text();
     console.log('Raw Gemini response:', responseText);
+    
+    // Check for document type errors first
+    if (responseText.includes("DOCUMENT_TYPE_ERROR:")) {
+      const errorMessage = responseText.split("DOCUMENT_TYPE_ERROR:")[1].trim();
+      throw new Error(`Document Type Error: ${errorMessage}`);
+    }
     
     // Extract JSON from response (handle markdown code blocks)
     let jsonString = responseText;
