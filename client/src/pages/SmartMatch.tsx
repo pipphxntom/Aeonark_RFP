@@ -87,38 +87,34 @@ export default function SmartMatch() {
 
   // Fetch industry models
   const { data: models, isLoading: modelsLoading } = useQuery({
-    queryKey: ['/api/industry-smartmatch/models'],
-    queryFn: () => apiRequest('/api/industry-smartmatch/models')
+    queryKey: ['/api/smartmatch/industry-models'],
+    queryFn: () => apiRequest('GET', '/api/smartmatch/industry-models').then(res => res.json())
   });
 
   // Fetch training logs
   const { data: trainingLogs, isLoading: logsLoading } = useQuery({
-    queryKey: ['/api/industry-smartmatch/training-logs', selectedIndustry],
-    queryFn: () => apiRequest(`/api/industry-smartmatch/training-logs?industry=${selectedIndustry}`)
+    queryKey: ['/api/smartmatch/training-logs', selectedIndustry],
+    queryFn: () => apiRequest('GET', '/api/smartmatch/training-logs').then(res => res.json())
   });
 
   // Fetch memory bank data
   const { data: memoryBank, isLoading: memoryLoading } = useQuery({
-    queryKey: ['/api/industry-smartmatch/memory-bank', selectedIndustry],
-    queryFn: () => apiRequest(`/api/industry-smartmatch/memory-bank?industry=${selectedIndustry}&limit=20`)
+    queryKey: ['/api/smartmatch/memory-banks', selectedIndustry],
+    queryFn: () => apiRequest('GET', '/api/smartmatch/memory-banks').then(res => res.json())
   });
 
   // Fetch model metrics for selected industry
   const { data: modelMetrics, isLoading: metricsLoading } = useQuery({
-    queryKey: ['/api/industry-smartmatch/model-metrics', selectedIndustry],
-    queryFn: () => apiRequest(`/api/industry-smartmatch/model-metrics/${selectedIndustry}`)
+    queryKey: ['/api/smartmatch/industry-models', selectedIndustry],
+    queryFn: () => apiRequest('GET', '/api/smartmatch/industry-models').then(res => res.json())
   });
 
   // Trigger training mutation
   const trainModelMutation = useMutation({
     mutationFn: (data: { industry: string; trainingType: string }) => 
-      apiRequest('/api/industry-smartmatch/train', {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      }),
+      apiRequest('POST', '/api/smartmatch/train-model', data).then(res => res.json()),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/industry-smartmatch'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/smartmatch'] });
     }
   });
 

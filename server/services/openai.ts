@@ -369,12 +369,45 @@ Respond only with valid JSON format.`
     });
 
     const responseText = result.response.text();
-    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    console.log('Raw Gemini proposal response:', responseText);
+    
+    // Extract JSON from response (handle markdown code blocks)
+    let jsonString = responseText;
+    
+    // Remove markdown code blocks
+    jsonString = jsonString.replace(/```json\s*/, '').replace(/```\s*$/, '');
+    
+    // Extract JSON object
+    const jsonMatch = jsonString.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       throw new Error('Invalid JSON response from Gemini');
     }
     
-    const proposalData = JSON.parse(jsonMatch[0]);
+    let cleanJsonString = jsonMatch[0];
+    
+    // Clean up common JSON formatting issues
+    cleanJsonString = cleanJsonString
+      .replace(/[\x00-\x1F\x7F-\x9F]/g, '')  // Remove control characters
+      .replace(/\n/g, '\\n')  // Escape newlines  
+      .replace(/\r/g, '\\r')  // Escape carriage returns
+      .replace(/\t/g, '\\t')  // Escape tabs
+      .replace(/,\s*}/g, '}')  // Remove trailing commas
+      .replace(/,\s*]/g, ']')  // Remove trailing commas in arrays
+      .replace(/([{,]\s*)(\w+):/g, '$1"$2":')  // Quote unquoted keys
+      .replace(/:\s*([^",\[\]{}]+)([,}])/g, ': "$1"$2')  // Quote unquoted string values
+      .replace(/": "(\d+)"([,}])/g, '": $1$2')  // Unquote numbers
+      .replace(/": "(true|false)"([,}])/g, '": $1$2');  // Unquote booleans
+    
+    console.log('Cleaned JSON string:', cleanJsonString);
+    
+    let proposalData;
+    try {
+      proposalData = JSON.parse(cleanJsonString);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError);
+      console.error('Failed to parse JSON:', cleanJsonString);
+      throw new Error('Failed to parse JSON response from Gemini');
+    }
 
     return {
       executiveSummary: proposalData.executiveSummary || "Executive summary not generated",
@@ -390,48 +423,44 @@ Respond only with valid JSON format.`
   } catch (error) {
     console.error("Error generating proposal:", error);
 
-    // Provide fallback proposal when OpenAI quota is exceeded
-    if (error.status === 429) {
-      console.log("OpenAI quota exceeded, providing fallback proposal");
-      return {
-        executiveSummary: `We are pleased to submit our proposal for this project. With our expertise in ${user.industry} and proven track record in delivering high-quality solutions, we are confident in our ability to meet your requirements and exceed expectations. Our team brings deep technical knowledge and a commitment to excellence that ensures project success.`,
+    // Provide fallback proposal when Gemini AI fails
+    console.log("Gemini AI failed, providing fallback proposal");
+    return {
+      executiveSummary: `We are pleased to submit our proposal for this project. With our expertise in ${user.industry} and proven track record in delivering high-quality solutions, we are confident in our ability to meet your requirements and exceed expectations. Our team brings deep technical knowledge and a commitment to excellence that ensures project success.`,
 
-        scopeOfWork: `**Project Scope:**\n\n1. **Requirements Analysis & Planning**\n   - Detailed review of all requirements\n   - Technical architecture design\n   - Project timeline development\n\n2. **Implementation Phase**\n   - Core system development\n   - Integration with existing systems\n   - Quality assurance and testing\n\n3. **Deployment & Support**\n   - Production deployment\n   - User training and documentation\n   - Ongoing support and maintenance\n\n**Deliverables:**\n- Complete solution as specified\n- Documentation and training materials\n- Post-deployment support`,
+      scopeOfWork: `**Project Scope:**\n\n1. **Requirements Analysis & Planning**\n   - Detailed review of all requirements\n   - Technical architecture design\n   - Project timeline development\n\n2. **Implementation Phase**\n   - Core system development\n   - Integration with existing systems\n   - Quality assurance and testing\n\n3. **Deployment & Support**\n   - Production deployment\n   - User training and documentation\n   - Ongoing support and maintenance\n\n**Deliverables:**\n- Complete solution as specified\n- Documentation and training materials\n- Post-deployment support`,
 
-        timeline: `**Project Timeline:**\n\n**Phase 1: Planning & Design (2-3 weeks)**\n- Requirements gathering\n- Technical specifications\n- Design approval\n\n**Phase 2: Development (8-12 weeks)**\n- Core development\n- Testing and quality assurance\n- Client reviews and feedback\n\n**Phase 3: Deployment (1-2 weeks)**\n- Production setup\n- User training\n- Go-live support\n\n**Total Duration:** 11-17 weeks\n\n*Note: Timeline may be adjusted based on specific requirements and client feedback cycles.*`,
+      timeline: `**Project Timeline:**\n\n**Phase 1: Planning & Design (2-3 weeks)**\n- Requirements gathering\n- Technical specifications\n- Design approval\n\n**Phase 2: Development (8-12 weeks)**\n- Core development\n- Testing and quality assurance\n- Client reviews and feedback\n\n**Phase 3: Deployment (1-2 weeks)**\n- Production setup\n- User training\n- Go-live support\n\n**Total Duration:** 11-17 weeks\n\n*Note: Timeline may be adjusted based on specific requirements and client feedback cycles.*`,
 
-        legalTerms: `**Terms and Conditions:**\n\n1. **Payment Terms:** Net 30 days from invoice date\n2. **Intellectual Property:** Client retains all rights to custom developments\n3. **Confidentiality:** All project information will be kept strictly confidential\n4. **Warranties:** 90-day warranty on all deliverables\n5. **Limitation of Liability:** Limited to the total contract value\n6. **Termination:** 30-day notice period required\n\n*These are standard terms and can be adjusted based on your requirements and legal preferences.*`,
+      legalTerms: `**Terms and Conditions:**\n\n1. **Payment Terms:** Net 30 days from invoice date\n2. **Intellectual Property:** Client retains all rights to custom developments\n3. **Confidentiality:** All project information will be kept strictly confidential\n4. **Warranties:** 90-day warranty on all deliverables\n5. **Limitation of Liability:** Limited to the total contract value\n6. **Termination:** 30-day notice period required\n\n*These are standard terms and can be adjusted based on your requirements and legal preferences.*`,
 
-        pricing: {
-          items: [
-            {
-              description: "Project Planning & Analysis",
-              duration: "2-3 weeks",
-              amount: 15000
-            },
-            {
-              description: "Development & Implementation",
-              duration: "8-12 weeks", 
-              amount: 45000
-            },
-            {
-              description: "Testing & Quality Assurance",
-              duration: "2 weeks",
-              amount: 8000
-            },
-            {
-              description: "Deployment & Training",
-              duration: "1-2 weeks",
-              amount: 7000
-            }
-          ],
-          total: 75000,
-          currency: "USD"
-        }
-      };
-    }
-
-    throw new Error("Failed to generate proposal");
+      pricing: {
+        items: [
+          {
+            description: "Project Planning & Analysis",
+            duration: "2-3 weeks",
+            amount: 15000
+          },
+          {
+            description: "Development & Implementation",
+            duration: "8-12 weeks", 
+            amount: 45000
+          },
+          {
+            description: "Testing & Quality Assurance",
+            duration: "2 weeks",
+            amount: 8000
+          },
+          {
+            description: "Deployment & Training",
+            duration: "1-2 weeks",
+            amount: 7000
+          }
+        ],
+        total: 75000,
+        currency: "USD"
+      }
+    };
   }
 }
 
