@@ -562,15 +562,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/analytics/timeline', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const { range = "30d" } = req.query;
-      
-      // Mock data for timeline - replace with real implementation
-      const timelineData = Array.from({ length: 30 }, (_, i) => ({
-        date: new Date(Date.now() - (29 - i) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-        proposals: Math.floor(Math.random() * 5),
-        turnaroundTime: Math.floor(Math.random() * 8) + 2
-      }));
-
+      const timelineData = await storage.getAnalyticsTimeline(userId);
       res.json(timelineData);
     } catch (error) {
       console.error("Error fetching timeline data:", error);

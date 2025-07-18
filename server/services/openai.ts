@@ -54,13 +54,21 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
     const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     
     const prompt = `
-      Analyze the RFP compatibility using the SmartMatch framework with 6 dimensions:
+      You are an elite RFP analyst with 20+ years of experience. Analyze this RFP using advanced intelligence and strategic thinking:
 
-      RFP Details:
+      RFP DOCUMENT ANALYSIS:
       - Title: ${rfp.title}
       - Description: ${rfp.description || "N/A"}
-      - Content: ${rfp.extractedText?.substring(0, 3000) || "N/A"}
+      - Full Content: ${rfp.extractedText?.substring(0, 5000) || "N/A"}
       - Deadline: ${rfp.deadline ? new Date(rfp.deadline).toISOString() : "Not specified"}
+
+      FIRST: Extract and summarize the document with these key insights:
+      1. Core Requirements (3-5 key deliverables)
+      2. Project Scope (business context and objectives)
+      3. Expected Deliverables (specific outputs required)
+      4. Budget Range (if mentioned, otherwise analyze project scale)
+      5. Timeline Requirements (project duration and milestones)
+      6. Industry Context (domain, regulations, market position)
 
       User Profile:
       - Industry: ${user.industry || "N/A"}
@@ -68,36 +76,43 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
       - Services Offered: ${user.servicesOffered?.join(", ") || "N/A"}
       - Tone Preference: ${user.tonePreference || "Professional"}
 
-      SCORING FRAMEWORK (each dimension 0-100):
+      ADVANCED SCORING FRAMEWORK (each dimension 0-100):
 
       1. SERVICE MATCH (35% weight): 
-         - Does RFP require services the company offers?
-         - Use semantic analysis, not just keywords
-         - Score: 100 = perfect match, 0 = no overlap
+         - Analyze semantic alignment between RFP requirements and offered services
+         - Consider technical depth, methodology compatibility, and delivery approach
+         - Look for hidden service needs (e.g., compliance, integration, training)
+         - Score: 100 = perfect strategic fit, 50 = good with adaptations, 0 = fundamental mismatch
 
       2. INDUSTRY MATCH (15% weight):
-         - Does RFP belong to user's industry vertical?
-         - Consider adjacent industries (e.g., MedTech = Healthcare)
-         - Score: 100 = exact match, 75 = adjacent, 50 = somewhat related
+         - Evaluate industry vertical alignment and domain expertise requirements
+         - Consider regulatory environment, market dynamics, and technical standards
+         - Assess adjacent industries and transferable knowledge
+         - Score: 100 = exact domain expertise, 75 = adjacent verticals, 50 = transferable skills
 
       3. TIMELINE ALIGNMENT (10% weight):
-         - Extract RFP deadline if present
-         - Compare with typical project delivery time
-         - Score: 100 = plenty of time, 50 = tight but doable, 0 = impossible
+         - Analyze project complexity vs available timeline
+         - Consider resource allocation, risk factors, and delivery dependencies
+         - Evaluate feasibility based on scope and quality expectations
+         - Score: 100 = comfortable timeline, 50 = aggressive but achievable, 0 = unrealistic
 
       4. CERTIFICATIONS (15% weight):
-         - Scan for required certifications (SOC2, ISO, HIPAA, etc.)
-         - Score: 100 = all requirements met, 0 = missing critical ones
+         - Identify explicit and implicit certification requirements
+         - Assess compliance, security, and quality standards needed
+         - Consider industry-specific accreditations and audit requirements
+         - Score: 100 = all certifications held, 50 = obtainable quickly, 0 = major gaps
 
       5. VALUE RANGE (10% weight):
-         - Extract budget/value indicators if present
-         - Estimate project size vs company capacity
-         - Score: 100 = perfect fit, 50 = acceptable, 0 = too small/large
+         - Estimate project value and complexity vs organizational capacity
+         - Analyze ROI potential, resource requirements, and strategic fit
+         - Consider growth opportunities and relationship building potential
+         - Score: 100 = optimal value alignment, 50 = acceptable range, 0 = poor fit
 
       6. PAST WIN SIMILARITY (15% weight):
-         - How similar is this to typical winning projects?
-         - Consider complexity, domain, requirements
-         - Score: 100 = very similar to past wins, 0 = completely different
+         - Compare with successful project patterns and proven capabilities
+         - Analyze technical complexity, client type, and delivery model similarity
+         - Consider lessons learned and competitive advantages from past wins
+         - Score: 100 = highly similar to best wins, 50 = some similarities, 0 = entirely new territory
 
       Calculate overall score: (service*0.35 + industry*0.15 + timeline*0.10 + cert*0.15 + value*0.10 + pastwin*0.15)
 
@@ -115,6 +130,16 @@ export async function analyzeRfpCompatibility(rfp: Rfp, user: User): Promise<Sma
           "pastWinSimilarity": number
         },
         "verdict": "Low Fit|Medium Fit|High Fit|Strong Fit",
+        "documentSummary": {
+          "keyRequirements": ["3-5 core requirements extracted from RFP"],
+          "projectScope": "2-3 sentence summary of business objectives and context", 
+          "deliverables": ["specific outputs and deliverables required"],
+          "budget": "budget range or project scale assessment",
+          "timeline": "project duration and key milestones",
+          "industryContext": "domain expertise and regulatory considerations",
+          "technicalComplexity": "assessment of technical challenges and requirements",
+          "strategicValue": "business impact and growth potential"
+        },
         "details": {
           "serviceReason": "why this score for services",
           "industryReason": "why this score for industry",
@@ -323,7 +348,22 @@ export async function generateProposal(rfp: Rfp, user: User): Promise<ProposalCo
       4. Legal Terms - Standard terms and conditions
       5. Pricing - Itemized pricing with clear descriptions
 
-      Use a ${user.tonePreference || "professional"} tone throughout.
+      PROPOSAL GENERATION REQUIREMENTS:
+      - Use ${user.tonePreference || "professional"} tone throughout
+      - Incorporate user's industry expertise: ${user.industry}
+      - Reflect company size capabilities: ${user.companySize}
+      - Emphasize services offered: ${user.servicesOffered?.join(", ")}
+      - Address specific RFP requirements mentioned in content
+      - Create compelling value propositions based on user's strengths
+      - Include industry-specific terminology and best practices
+      - Ensure pricing reflects company size and market positioning
+
+      Write proposals that:
+      1. Demonstrate deep understanding of client's business needs
+      2. Showcase relevant experience and capabilities
+      3. Present clear value propositions and competitive advantages
+      4. Address potential concerns and risk mitigation
+      5. Use persuasive but authentic language that builds trust
 
       Respond with JSON in this format:
       {

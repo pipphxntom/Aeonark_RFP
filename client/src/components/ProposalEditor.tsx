@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { MarkdownRenderer } from "./MarkdownRenderer";
 import { 
   FileText, 
   Edit3, 
@@ -387,18 +388,16 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
                         </div>
                       </div>
                     ) : (
-                      <div className="prose prose-invert max-w-none">
-                        <div 
+                      section.content ? (
+                        <MarkdownRenderer 
+                          content={section.content}
                           className="whitespace-pre-wrap text-gray-200 leading-relaxed"
-                          style={{ fontFamily: 'SF Pro Display, -apple-system, BlinkMacSystemFont, sans-serif' }}
-                        >
-                          {section.content || (
-                            <div className="text-gray-500 italic text-center py-8">
-                              No content generated yet. Click "Regenerate" to create content for this section.
-                            </div>
-                          )}
+                        />
+                      ) : (
+                        <div className="text-gray-500 italic text-center py-8">
+                          No content generated yet. Click "Regenerate" to create content for this section.
                         </div>
-                      </div>
+                      )
                     )}
                   </Card>
                 </motion.div>

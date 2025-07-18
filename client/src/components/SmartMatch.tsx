@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -278,6 +278,90 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
                 </Badge>
               </CardContent>
             </Card>
+
+            {/* Document Summary */}
+            {smartMatch.documentSummary && (
+              <Card className="glass-morphism neon-border-blue">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-blue-400" />
+                    RFP Document Summary
+                  </CardTitle>
+                  <CardDescription>
+                    Key insights extracted from the RFP document
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm text-gray-300 mb-2">Core Requirements</h4>
+                        <ul className="space-y-1 text-sm">
+                          {smartMatch.documentSummary.keyRequirements?.map((req, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <CheckCircle2 className="h-4 w-4 text-green-400 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-200">{req}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-sm text-gray-300 mb-2">Expected Deliverables</h4>
+                        <ul className="space-y-1 text-sm">
+                          {smartMatch.documentSummary.deliverables?.map((deliverable, i) => (
+                            <li key={i} className="flex items-start gap-2">
+                              <Target className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                              <span className="text-gray-200">{deliverable}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div>
+                        <h4 className="font-semibold text-sm text-gray-300 mb-2">Project Scope</h4>
+                        <p className="text-sm text-gray-200 leading-relaxed">
+                          {smartMatch.documentSummary.projectScope}
+                        </p>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-300 mb-1">Budget Range</h4>
+                          <p className="text-sm text-gray-200">{smartMatch.documentSummary.budget}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-300 mb-1">Timeline</h4>
+                          <p className="text-sm text-gray-200">{smartMatch.documentSummary.timeline}</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-sm text-gray-300 mb-1">Industry Context</h4>
+                        <p className="text-sm text-gray-200">{smartMatch.documentSummary.industryContext}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {smartMatch.documentSummary.technicalComplexity && (
+                    <div className="border-t border-gray-700 pt-4">
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-300 mb-1">Technical Complexity</h4>
+                          <p className="text-sm text-gray-200">{smartMatch.documentSummary.technicalComplexity}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-300 mb-1">Strategic Value</h4>
+                          <p className="text-sm text-gray-200">{smartMatch.documentSummary.strategicValue}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
             {/* 6-Dimension Breakdown */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

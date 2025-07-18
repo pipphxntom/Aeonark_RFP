@@ -69,10 +69,25 @@ interface FunnelData {
 export function AnalyticsDashboard() {
   const [timeRange, setTimeRange] = useState("30d");
 
-  // Fetch analytics summary
+  // Fetch real analytics summary
   const { data: analytics, isLoading } = useQuery<AnalyticsData>({
     queryKey: ["/api/analytics/summary"],
   });
+
+  // Show empty state if no data
+  if (!analytics?.hasData && !isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-20">
+            <Activity className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">No Analytics Data Yet</h2>
+            <p className="text-gray-500">Upload and analyze RFPs to see your performance metrics</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Fetch timeline data for charts
   const { data: timelineData = [] } = useQuery<TimelineData[]>({

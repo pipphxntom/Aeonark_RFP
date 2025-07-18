@@ -276,7 +276,7 @@ export function AIGeneration({ rfpId, onClose }: AIGenerationProps) {
                   animate={{ opacity: [1, 0.5, 1] }}
                   transition={{ duration: 2, repeat: Infinity }}
                 >
-                  Forging Proposal with AI Intelligence...
+                  Forging Proposal with AeonRFP...
                 </motion.h2>
                 <p className="text-gray-400">
                   Analyzing requirements and generating optimized content

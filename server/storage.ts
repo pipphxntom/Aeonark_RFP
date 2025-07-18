@@ -273,6 +273,60 @@ export class DatabaseStorage implements IStorage {
     return created;
   }
 
+  async getAnalyticsSummary(userId: string): Promise<any> {
+    // Get real data based on actual user activity
+    const userRfps = await db.select().from(rfps).where(eq(rfps.userId, userId));
+    const userProposals = await db.select().from(proposals).where(eq(proposals.userId, userId));
+    const userSmartMatches = await db.select().from(smartMatches).where(sql`${smartMatches.rfpId} IN (SELECT id FROM ${rfps} WHERE user_id = ${userId})`);
+    
+    if (userRfps.length === 0) {
+      // Return empty state when no RFPs analyzed
+      return {
+        totalProposals: 0,
+        winRate: 0,
+        avgScore: 0,
+        timeSaved: 0,
+        hasData: false
+      };
+    }
+
+    const avgScore = userSmartMatches.length > 0 
+      ? userSmartMatches.reduce((sum, match) => sum + match.overallScore, 0) / userSmartMatches.length
+      : 0;
+
+    const wonProposals = userProposals.filter(p => p.status === 'won').length;
+    const winRate = userProposals.length > 0 ? (wonProposals / userProposals.length) * 100 : 0;
+    
+    // Estimate time saved: 8 hours per RFP analysis + 12 hours per proposal generation
+    const timeSaved = (userRfps.length * 8) + (userProposals.length * 12);
+
+    return {
+      totalProposals: userProposals.length,
+      winRate: Math.round(winRate),
+      avgScore: Math.round(avgScore),
+      timeSaved,
+      hasData: true
+    };
+  }
+
+  async getAnalyticsTimeline(userId: string): Promise<any[]> {
+    const userRfps = await db.select().from(rfps).where(eq(rfps.userId, userId));
+    
+    if (userRfps.length === 0) return [];
+
+    // Group RFPs by creation date and calculate metrics
+    const timelineData = userRfps.reduce((acc: any, rfp) => {
+      const date = new Date(rfp.createdAt).toISOString().split('T')[0];
+      if (!acc[date]) {
+        acc[date] = { date, proposals: 0, turnaroundTime: 2.5 };
+      }
+      acc[date].proposals += 1;
+      return acc;
+    }, {});
+
+    return Object.values(timelineData);
+  }
+
   async getAnalyticsEvents(userId: string, eventType?: string): Promise<AnalyticsEvent[]> {
     const conditions = [eq(analyticsEvents.userId, userId)];
     if (eventType) {
@@ -597,7 +651,37 @@ export class DatabaseStorage implements IStorage {
     // In a real implementation, this would insert into the training_logs table
     // For now, return the created log for the API response
     return trainingLog;
-    return query;
+  }
+
+  async getAnalyticsTimeline(userId: string) {
+    try {
+      const proposalData = await db.select({
+        date: sql`DATE(${proposals.createdAt})`,
+        count: count(),
+        avgTime: sql`AVG(CASE 
+          WHEN ${proposals.createdAt} > ${proposals.updatedAt} THEN 0 
+          ELSE EXTRACT(EPOCH FROM (${proposals.updatedAt} - ${proposals.createdAt})) / 3600 
+        END)`
+      })
+      .from(proposals)
+      .where(and(
+        eq(proposals.userId, userId),
+        sql`${proposals.createdAt} >= NOW() - INTERVAL '30 days'`
+      ))
+      .groupBy(sql`DATE(${proposals.createdAt})`)
+      .orderBy(sql`DATE(${proposals.createdAt}) DESC`)
+      .limit(30);
+      
+      return proposalData.map(row => ({
+        date: row.date,
+        proposals: row.count,
+        turnaroundTime: Math.round(parseFloat(row.avgTime?.toString() || '0'))
+      }));
+    } catch (error) {
+      console.error("Error getting analytics timeline:", error);
+      // Return real empty data instead of mock data
+      return [];
+    }
   }
 }
 
