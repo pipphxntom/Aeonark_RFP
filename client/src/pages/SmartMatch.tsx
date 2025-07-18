@@ -1,387 +1,615 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
-import { FileText, Search, Sparkles, Clock, ThumbsUp } from 'lucide-react';
-import { toast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Progress } from "@/components/ui/progress";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Brain, 
+  TrendingUp, 
+  Target, 
+  AlertTriangle, 
+  CheckCircle2, 
+  Database,
+  BarChart3,
+  Clock,
+  Award,
+  Lightbulb,
+  Users,
+  Settings,
+  Zap,
+  Activity
+} from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
-interface ClauseMatch {
+interface IndustryModel {
   id: number;
-  title: string;
-  body: string;
-  category: string;
-  tags: string[];
-  similarityScore: number;
-  explanation: string;
-  usageCount: number;
+  industry: string;
+  modelVersion: string;
+  trainingDataCount: number;
+  lastTrainingDate: string | null;
+  performanceMetrics: {
+    accuracy: number;
+    precision: number;
+    recall: number;
+    f1Score: number;
+    trainingDataSize: number;
+  };
+  isActive: boolean;
+  createdAt: string;
 }
 
-interface SmartMatchResponse {
-  matches: ClauseMatch[];
-  queryId: number;
-  processingTime: number;
-  model: string;
-  insights: string;
-  totalClauses: number;
+interface TrainingLog {
+  id: number;
+  industry: string;
+  trainingType: string;
+  dataPointsUsed: number;
+  trainingDuration: number;
+  status: string;
+  improvements: {
+    accuracyImprovement: number;
+    dataPointsAdded: number;
+  };
+  beforeMetrics: any;
+  afterMetrics: any;
+  createdAt: string;
+}
+
+interface MemoryBankEntry {
+  id: number;
+  industry: string;
+  outcome: string;
+  winProbability: string | null;
+  projectValue: string | null;
+  timelineWeeks: number | null;
+  competitorCount: number | null;
+  clientSize: string | null;
+  keyPhrases: string[];
+  requiredCertifications: string[];
+  createdAt: string;
+}
+
+interface MemoryBankStats {
+  totalEntries: number;
+  winRate: number;
+  avgProjectValue: number;
+  industries: string[];
 }
 
 export default function SmartMatch() {
-  const [query, setQuery] = useState('');
-  const [selectedModel, setSelectedModel] = useState('gemini');
-  const [file, setFile] = useState<File | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedIndustry, setSelectedIndustry] = useState<string>("technology");
+  const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
 
-  // Fetch existing clause templates
-  const { data: clauses, isLoading: clausesLoading } = useQuery({
-    queryKey: ['/api/smartmatch/clauses'],
-    queryFn: async () => {
-      const response = await fetch('/api/smartmatch/clauses');
-      if (!response.ok) throw new Error('Failed to fetch clauses');
-      return response.json();
-    }
+  // Fetch industry models
+  const { data: models, isLoading: modelsLoading } = useQuery({
+    queryKey: ['/api/industry-smartmatch/models'],
+    queryFn: () => apiRequest('/api/industry-smartmatch/models')
   });
 
-  // SmartMatch query mutation
-  const smartMatchMutation = useMutation({
-    mutationFn: async ({ query, model, file }: { query: string; model: string; file?: File }) => {
-      const formData = new FormData();
-      formData.append('query', query);
-      formData.append('model', model);
-      if (file) {
-        formData.append('file', file);
-      }
+  // Fetch training logs
+  const { data: trainingLogs, isLoading: logsLoading } = useQuery({
+    queryKey: ['/api/industry-smartmatch/training-logs', selectedIndustry],
+    queryFn: () => apiRequest(`/api/industry-smartmatch/training-logs?industry=${selectedIndustry}`)
+  });
 
-      const response = await fetch('/api/smartmatch', {
+  // Fetch memory bank data
+  const { data: memoryBank, isLoading: memoryLoading } = useQuery({
+    queryKey: ['/api/industry-smartmatch/memory-bank', selectedIndustry],
+    queryFn: () => apiRequest(`/api/industry-smartmatch/memory-bank?industry=${selectedIndustry}&limit=20`)
+  });
+
+  // Fetch model metrics for selected industry
+  const { data: modelMetrics, isLoading: metricsLoading } = useQuery({
+    queryKey: ['/api/industry-smartmatch/model-metrics', selectedIndustry],
+    queryFn: () => apiRequest(`/api/industry-smartmatch/model-metrics/${selectedIndustry}`)
+  });
+
+  // Trigger training mutation
+  const trainModelMutation = useMutation({
+    mutationFn: (data: { industry: string; trainingType: string }) => 
+      apiRequest('/api/industry-smartmatch/train', {
         method: 'POST',
-        body: formData
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to process SmartMatch query');
-      }
-
-      return response.json();
-    },
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      }),
     onSuccess: () => {
-      toast({
-        title: "SmartMatch Complete",
-        description: "Found matching clauses for your query",
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "SmartMatch Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      queryClient.invalidateQueries({ queryKey: ['/api/industry-smartmatch'] });
     }
   });
 
-  // Create sample clauses mutation
-  const createSampleClausesMutation = useMutation({
-    mutationFn: async () => {
-      const response = await fetch('/api/smartmatch/sample-clauses', {
-        method: 'POST'
-      });
-      if (!response.ok) throw new Error('Failed to create sample clauses');
-      return response.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/smartmatch/clauses'] });
-      toast({
-        title: "Sample Clauses Created",
-        description: "Added sample clause templates for testing",
-      });
-    }
-  });
+  const availableIndustries = models?.models?.map((m: IndustryModel) => m.industry) || ["technology", "healthcare", "finance"];
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!query.trim() && !file) {
-      toast({
-        title: "Input Required",
-        description: "Please enter a query or upload a PDF file",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsProcessing(true);
-    try {
-      await smartMatchMutation.mutateAsync({ query, model: selectedModel, file: file || undefined });
-    } finally {
-      setIsProcessing(false);
-    }
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return "text-green-500";
+    if (score >= 60) return "text-yellow-500";
+    return "text-red-500";
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      if (selectedFile.type === 'application/pdf') {
-        setFile(selectedFile);
-      } else {
-        toast({
-          title: "Invalid File Type",
-          description: "Please upload a PDF file",
-          variant: "destructive",
-        });
-      }
-    }
+  const getStatusBadge = (status: string) => {
+    const variants = {
+      completed: "bg-green-500/10 text-green-500 border-green-500/20",
+      running: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+      failed: "bg-red-500/10 text-red-500 border-red-500/20"
+    };
+    return variants[status as keyof typeof variants] || variants.completed;
   };
-
-  const result = smartMatchMutation.data as SmartMatchResponse | undefined;
 
   return (
-    <div className="container mx-auto p-6 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2 bg-gradient-to-r from-green-400 to-blue-500 bg-clip-text text-transparent">
-          SmartMatch Engine
-        </h1>
-        <p className="text-gray-400">
-          Intelligently match your queries to relevant clause templates using AI-powered vector embeddings
-        </p>
-      </div>
-
-      {/* Query Input Section */}
-      <Card className="mb-8 bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Search className="h-5 w-5" />
-            Query Input
-          </CardTitle>
-          <CardDescription>
-            Enter your question or upload a PDF file to find matching clauses
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="query">Text Query</Label>
-                <Textarea
-                  id="query"
-                  placeholder="e.g., Does your company have ISO27001 certification?"
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  rows={4}
-                  className="bg-gray-800 border-gray-700"
-                />
-              </div>
-              <div>
-                <Label htmlFor="file">Or Upload PDF</Label>
-                <Input
-                  id="file"
-                  type="file"
-                  accept=".pdf"
-                  onChange={handleFileChange}
-                  className="bg-gray-800 border-gray-700"
-                />
-                {file && (
-                  <p className="text-sm text-gray-400 mt-1">
-                    Selected: {file.name}
-                  </p>
-                )}
-              </div>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg">
+              <Brain className="h-6 w-6 text-white" />
             </div>
-            
-            <div className="flex items-center gap-4">
-              <div>
-                <Label htmlFor="model">AI Model</Label>
-                <Select value={selectedModel} onValueChange={setSelectedModel}>
-                  <SelectTrigger className="w-40 bg-gray-800 border-gray-700">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="gemini">Google Gemini</SelectItem>
-                    <SelectItem value="openai" disabled>OpenAI GPT-4 (Coming Soon)</SelectItem>
-                    <SelectItem value="claude" disabled>Claude (Coming Soon)</SelectItem>
-                    <SelectItem value="deepseek" disabled>DeepSeek (Coming Soon)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="flex-1" />
-              
-              <Button 
-                type="submit" 
-                disabled={isProcessing || smartMatchMutation.isPending}
-                className="bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-green-600 to-blue-600 bg-clip-text text-transparent">
+              Industry SmartMatch Engine
+            </h1>
+          </div>
+          <p className="text-gray-600 dark:text-gray-400 max-w-2xl">
+            Advanced AI-powered proposal matching with industry-specific learning, continuous training, and isolated memory banks for enhanced data privacy.
+          </p>
+        </div>
+
+        {/* Industry Selector */}
+        <div className="mb-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Settings className="h-4 w-4 text-gray-500" />
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Industry Focus</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {availableIndustries.map((industry) => (
+              <Button
+                key={industry}
+                variant={selectedIndustry === industry ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedIndustry(industry)}
+                className="capitalize"
               >
-                {isProcessing ? (
-                  <>
-                    <Sparkles className="h-4 w-4 mr-2 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <Search className="h-4 w-4 mr-2" />
-                    Search Clauses
-                  </>
-                )}
+                {industry}
               </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            ))}
+          </div>
+        </div>
 
-      {/* Results Section */}
-      {result && (
-        <Card className="mb-8 bg-gray-900 border-gray-800">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5" />
-              SmartMatch Results
-            </CardTitle>
-            <CardDescription>
-              Found {result.matches.length} matching clauses from {result.totalClauses} total • Processed in {result.processingTime}ms using {result.model}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {/* AI Insights Section */}
-            {result.insights && (
-              <div className="mb-6 p-4 bg-gradient-to-r from-blue-900/20 to-green-900/20 rounded-lg border border-blue-500/30">
-                <h3 className="font-semibold text-blue-400 mb-2 flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  AI Insights
-                </h3>
-                <div className="text-gray-300 text-sm whitespace-pre-wrap">
-                  {result.insights}
-                </div>
-              </div>
+        {/* Main Content Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="overview" className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Overview
+            </TabsTrigger>
+            <TabsTrigger value="training" className="flex items-center gap-2">
+              <Brain className="h-4 w-4" />
+              Training
+            </TabsTrigger>
+            <TabsTrigger value="memory" className="flex items-center gap-2">
+              <Database className="h-4 w-4" />
+              Memory Bank
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
+              <Activity className="h-4 w-4" />
+              Analytics
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Overview Tab */}
+          <TabsContent value="overview" className="space-y-6">
+            {/* Model Performance Cards */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <Card className="border-2 border-green-200 dark:border-green-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-600">Model Accuracy</CardTitle>
+                    <Target className="h-4 w-4 text-green-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-green-600">
+                    {modelMetrics?.metrics?.performanceMetrics?.accuracy ? 
+                      `${(modelMetrics.metrics.performanceMetrics.accuracy * 100).toFixed(1)}%` : 
+                      "Training Required"
+                    }
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {modelMetrics?.metrics?.trainingDataCount || 0} training samples
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-blue-200 dark:border-blue-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-600">Win Rate</CardTitle>
+                    <TrendingUp className="h-4 w-4 text-blue-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-blue-600">
+                    {memoryBank?.statistics?.winRate || 0}%
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    From {memoryBank?.statistics?.totalEntries || 0} historical RFPs
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-purple-200 dark:border-purple-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-600">Avg Project Value</CardTitle>
+                    <Award className="h-4 w-4 text-purple-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-purple-600">
+                    ${(memoryBank?.statistics?.avgProjectValue || 0).toLocaleString()}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    Based on historical data
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-orange-200 dark:border-orange-800">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm font-medium text-gray-600">Model Version</CardTitle>
+                    <Zap className="h-4 w-4 text-orange-500" />
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-orange-600">
+                    v{modelMetrics?.metrics?.modelVersion || "1.0"}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {modelMetrics?.metrics?.lastTrainingDate ? 
+                      `Updated ${new Date(modelMetrics.metrics.lastTrainingDate).toLocaleDateString()}` :
+                      "Initial version"
+                    }
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Model Performance Details */}
+            {modelMetrics?.metrics?.performanceMetrics && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    {selectedIndustry.charAt(0).toUpperCase() + selectedIndustry.slice(1)} Model Performance
+                  </CardTitle>
+                  <CardDescription>
+                    Detailed performance metrics for industry-specific AI model
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {Object.entries(modelMetrics.metrics.performanceMetrics).map(([metric, value]) => (
+                    <div key={metric} className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="capitalize font-medium">{metric.replace(/([A-Z])/g, ' $1')}</span>
+                        <span className={getScoreColor(typeof value === 'number' ? value * 100 : 0)}>
+                          {typeof value === 'number' ? `${(value * 100).toFixed(1)}%` : value}
+                        </span>
+                      </div>
+                      {typeof value === 'number' && (
+                        <Progress value={value * 100} className="h-2" />
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
             )}
 
-            <div className="space-y-4">
-              {result.matches.map((match, index) => (
-                <div key={match.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="bg-gradient-to-r from-green-500 to-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-lg">{match.title}</h3>
-                        <div className="flex items-center gap-2 mt-1">
-                          <Badge variant="outline" className="bg-gray-700 border-gray-600">
-                            {match.category}
-                          </Badge>
-                          <div className="flex items-center gap-1 text-sm text-gray-400">
-                            <ThumbsUp className="h-3 w-3" />
-                            {match.usageCount} uses
+            {/* Training Status */}
+            {!modelMetrics?.metrics?.performanceMetrics && (
+              <Alert>
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription>
+                  Industry model requires training. Add historical RFP data to improve matching accuracy.
+                  <Button 
+                    size="sm" 
+                    className="ml-3"
+                    onClick={() => trainModelMutation.mutate({ industry: selectedIndustry, trainingType: 'initial' })}
+                    disabled={trainModelMutation.isPending}
+                  >
+                    {trainModelMutation.isPending ? "Training..." : "Start Training"}
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+          </TabsContent>
+
+          {/* Training Tab */}
+          <TabsContent value="training" className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Training Controls */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Settings className="h-5 w-5" />
+                    Model Training
+                  </CardTitle>
+                  <CardDescription>
+                    Trigger training for {selectedIndustry} industry model
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-3">
+                    <Button 
+                      onClick={() => trainModelMutation.mutate({ industry: selectedIndustry, trainingType: 'incremental' })}
+                      disabled={trainModelMutation.isPending}
+                      className="w-full"
+                    >
+                      <Brain className="h-4 w-4 mr-2" />
+                      Incremental Training
+                    </Button>
+                    <Button 
+                      variant="outline"
+                      onClick={() => trainModelMutation.mutate({ industry: selectedIndustry, trainingType: 'retrain' })}
+                      disabled={trainModelMutation.isPending}
+                      className="w-full"
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      Full Retrain
+                    </Button>
+                  </div>
+                  
+                  {trainModelMutation.isPending && (
+                    <Alert>
+                      <Clock className="h-4 w-4" />
+                      <AlertDescription>
+                        Training in progress... This may take a few minutes.
+                      </AlertDescription>
+                    </Alert>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Recent Training Logs */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Activity className="h-5 w-5" />
+                    Training History
+                  </CardTitle>
+                  <CardDescription>
+                    Recent training sessions for {selectedIndustry}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-64">
+                    {logsLoading ? (
+                      <div className="text-center py-8 text-gray-500">Loading training logs...</div>
+                    ) : trainingLogs?.trainingLogs?.length > 0 ? (
+                      <div className="space-y-3">
+                        {trainingLogs.trainingLogs.slice(0, 5).map((log: TrainingLog) => (
+                          <div key={log.id} className="p-3 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <Badge className={getStatusBadge(log.status)}>
+                                {log.status}
+                              </Badge>
+                              <span className="text-xs text-gray-500">
+                                {new Date(log.createdAt).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="text-sm space-y-1">
+                              <div>Type: <span className="font-medium capitalize">{log.trainingType}</span></div>
+                              <div>Data Points: <span className="font-medium">{log.dataPointsUsed}</span></div>
+                              <div>Duration: <span className="font-medium">{log.trainingDuration}s</span></div>
+                              {log.improvements?.accuracyImprovement && (
+                                <div className="text-green-600">
+                                  Accuracy improved by {(log.improvements.accuracyImprovement * 100).toFixed(1)}%
+                                </div>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        ))}
                       </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-green-400">
-                        {Math.round(match.similarityScore * 100)}%
-                      </div>
-                      <div className="text-xs text-gray-500">similarity</div>
-                    </div>
-                  </div>
-                  
-                  <div className="mb-4">
-                    <Progress value={match.similarityScore * 100} className="h-2" />
-                  </div>
-                  
-                  <div className="space-y-3">
-                    <div>
-                      <h4 className="font-medium text-blue-400 mb-1">Explanation</h4>
-                      <p className="text-gray-300 text-sm">{match.explanation}</p>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-medium text-blue-400 mb-1">Clause Content</h4>
-                      <p className="text-gray-300 text-sm bg-gray-900 p-3 rounded border border-gray-700">
-                        {match.body}
-                      </p>
-                    </div>
-                    
-                    {match.tags.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-blue-400 mb-1">Tags</h4>
-                        <div className="flex flex-wrap gap-1">
-                          {match.tags.map((tag, i) => (
-                            <Badge key={i} variant="secondary" className="bg-gray-700 text-gray-300">
-                              {tag}
-                            </Badge>
-                          ))}
-                        </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        No training history yet
                       </div>
                     )}
-                  </div>
-                </div>
-              ))}
+                  </ScrollArea>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
-      )}
+          </TabsContent>
 
-      {/* Clause Templates Section */}
-      <Card className="bg-gray-900 border-gray-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Clause Templates
-          </CardTitle>
-          <CardDescription>
-            Manage your clause templates for SmartMatch
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {clausesLoading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-              <p className="text-gray-400 mt-2">Loading clause templates...</p>
-            </div>
-          ) : !clauses || clauses.length === 0 ? (
-            <div className="text-center py-8">
-              <FileText className="h-16 w-16 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400 mb-4">No clause templates found</p>
-              <Button 
-                onClick={() => createSampleClausesMutation.mutate()}
-                disabled={createSampleClausesMutation.isPending}
-                variant="outline"
-                className="border-gray-700"
-              >
-                Create Sample Clauses
-              </Button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {clauses.map((clause: any) => (
-                <div key={clause.id} className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                  <div className="flex items-start justify-between mb-2">
-                    <h3 className="font-semibold text-sm">{clause.title}</h3>
-                    <Badge variant="outline" className="bg-gray-700 border-gray-600 text-xs">
-                      {clause.category}
-                    </Badge>
+          {/* Memory Bank Tab */}
+          <TabsContent value="memory" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5" />
+                  Historical Data Repository
+                </CardTitle>
+                <CardDescription>
+                  Stored RFP and proposal data for {selectedIndustry} industry learning
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {memoryLoading ? (
+                  <div className="text-center py-8 text-gray-500">Loading memory bank...</div>
+                ) : memoryBank?.memoryBank?.length > 0 ? (
+                  <div className="space-y-4">
+                    {memoryBank.memoryBank.map((entry: MemoryBankEntry) => (
+                      <div key={entry.id} className="p-4 border rounded-lg">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <Badge variant={entry.outcome === 'won' ? 'default' : entry.outcome === 'lost' ? 'destructive' : 'secondary'}>
+                              {entry.outcome}
+                            </Badge>
+                            {entry.projectValue && (
+                              <span className="text-sm text-gray-600">
+                                ${parseFloat(entry.projectValue).toLocaleString()}
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs text-gray-500">
+                            {new Date(entry.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <div className="font-medium mb-1">Key Phrases</div>
+                            <div className="flex flex-wrap gap-1">
+                              {entry.keyPhrases?.slice(0, 3).map((phrase, i) => (
+                                <Badge key={i} variant="outline" className="text-xs">
+                                  {phrase}
+                                </Badge>
+                              ))}
+                              {entry.keyPhrases?.length > 3 && (
+                                <Badge variant="outline" className="text-xs">
+                                  +{entry.keyPhrases.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <div className="font-medium mb-1">Project Details</div>
+                            <div className="space-y-1 text-gray-600">
+                              {entry.timelineWeeks && <div>Timeline: {entry.timelineWeeks} weeks</div>}
+                              {entry.competitorCount && <div>Competitors: {entry.competitorCount}</div>}
+                              {entry.clientSize && <div>Client: {entry.clientSize}</div>}
+                            </div>
+                          </div>
+                        </div>
+
+                        {entry.requiredCertifications?.length > 0 && (
+                          <div className="mt-3">
+                            <div className="font-medium mb-1 text-sm">Required Certifications</div>
+                            <div className="flex flex-wrap gap-1">
+                              {entry.requiredCertifications.map((cert, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs">
+                                  {cert}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                  <p className="text-gray-400 text-xs mb-3 line-clamp-3">
-                    {clause.body}
-                  </p>
-                  <div className="flex items-center justify-between text-xs text-gray-500">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-3 w-3" />
-                      {clause.usageCount} uses
-                    </div>
-                    <div>
-                      {clause.tags?.length || 0} tags
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <Database className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <div>No historical data stored yet</div>
+                    <div className="text-sm mt-1">
+                      Upload RFPs and add outcome data to build your industry-specific memory bank
                     </div>
                   </div>
-                </div>
-              ))}
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Analytics Tab */}
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid lg:grid-cols-2 gap-6">
+              {/* Success Predictors */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5" />
+                    Success Predictors
+                  </CardTitle>
+                  <CardDescription>
+                    Key factors that correlate with winning proposals
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Industry Experience Match</span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={85} className="w-20 h-2" />
+                        <span className="text-sm font-medium">85%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Timeline Feasibility</span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={78} className="w-20 h-2" />
+                        <span className="text-sm font-medium">78%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Certification Compliance</span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={72} className="w-20 h-2" />
+                        <span className="text-sm font-medium">72%</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm">Competitive Pricing</span>
+                      <div className="flex items-center gap-2">
+                        <Progress value={65} className="w-20 h-2" />
+                        <span className="text-sm font-medium">65%</span>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Risk Factors */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Risk Factors
+                  </CardTitle>
+                  <CardDescription>
+                    Common factors associated with proposal losses
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-red-500 mt-2"></div>
+                      <div>
+                        <div className="font-medium text-sm">High Competition</div>
+                        <div className="text-xs text-gray-500">5+ competitors typically reduce win rate by 25%</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-orange-500 mt-2"></div>
+                      <div>
+                        <div className="font-medium text-sm">Tight Timeline</div>
+                        <div className="text-xs text-gray-500">Less than 8 weeks reduces success probability</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-yellow-500 mt-2"></div>
+                      <div>
+                        <div className="font-medium text-sm">Missing Certifications</div>
+                        <div className="text-xs text-gray-500">Required compliance certifications not held</div>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-3">
+                      <div className="w-2 h-2 rounded-full bg-blue-500 mt-2"></div>
+                      <div>
+                        <div className="font-medium text-sm">Limited Historical Data</div>
+                        <div className="text-xs text-gray-500">Insufficient training data for accurate predictions</div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

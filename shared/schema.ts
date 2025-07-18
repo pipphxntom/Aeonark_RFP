@@ -71,6 +71,88 @@ export const smartMatches = pgTable("smart_matches", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Industry-specific memory banks and training data
+export const industryMemoryBanks = pgTable("industry_memory_banks", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  industry: varchar("industry").notNull(),
+  rfpText: text("rfp_text").notNull(),
+  proposalText: text("proposal_text").notNull(),
+  outcome: varchar("outcome").notNull(), // "won", "lost", "pending"
+  winProbability: decimal("win_probability", { precision: 5, scale: 4 }),
+  keyPhrases: text("key_phrases").array(),
+  requiredCertifications: text("required_certifications").array(),
+  projectValue: decimal("project_value", { precision: 12, scale: 2 }),
+  timelineWeeks: integer("timeline_weeks"),
+  competitorCount: integer("competitor_count"),
+  clientSize: varchar("client_size"), // "enterprise", "mid-market", "small"
+  embedding: text("embedding"), // Vector embedding for semantic similarity
+  feedbackNotes: text("feedback_notes"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Industry-specific scoring weights and models
+export const industryModels = pgTable("industry_models", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  industry: varchar("industry").notNull(),
+  modelVersion: varchar("model_version").notNull().default("1.0"),
+  scoringWeights: jsonb("scoring_weights").notNull(), // Dynamic weights for different criteria
+  trainingDataCount: integer("training_data_count").default(0),
+  lastTrainingDate: timestamp("last_training_date"),
+  performanceMetrics: jsonb("performance_metrics"), // Accuracy, precision, recall
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Training logs and performance tracking
+export const trainingLogs = pgTable("training_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  industry: varchar("industry").notNull(),
+  modelId: integer("model_id").notNull().references(() => industryModels.id),
+  trainingType: varchar("training_type").notNull(), // "initial", "incremental", "retrain"
+  dataPointsUsed: integer("data_points_used"),
+  trainingDuration: integer("training_duration_seconds"),
+  beforeMetrics: jsonb("before_metrics"),
+  afterMetrics: jsonb("after_metrics"),
+  improvements: jsonb("improvements"),
+  status: varchar("status").notNull().default("completed"), // "running", "completed", "failed"
+  errorLogs: text("error_logs"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Enhanced smart matches with industry-specific insights
+export const enhancedSmartMatches = pgTable("enhanced_smart_matches", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").notNull().references(() => rfps.id),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  industry: varchar("industry").notNull(),
+  modelVersion: varchar("model_version").notNull(),
+  overallScore: integer("overall_score").notNull(),
+  industrySpecificScores: jsonb("industry_specific_scores").notNull(),
+  similarHistoricalRfps: jsonb("similar_historical_rfps"), // Array of similar RFP IDs with similarity scores
+  confidenceLevel: decimal("confidence_level", { precision: 5, scale: 4 }),
+  riskFactors: jsonb("risk_factors"),
+  successPredictors: jsonb("success_predictors"),
+  recommendedStrategy: jsonb("recommended_strategy"),
+  competitiveAnalysis: jsonb("competitive_analysis"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Feature extraction and preprocessing results
+export const extractedFeatures = pgTable("extracted_features", {
+  id: serial("id").primaryKey(),
+  memoryBankId: integer("memory_bank_id").notNull().references(() => industryMemoryBanks.id),
+  featureType: varchar("feature_type").notNull(), // "key_phrase", "certification", "requirement"
+  featureValue: text("feature_value").notNull(),
+  importance: decimal("importance", { precision: 5, scale: 4 }),
+  frequency: integer("frequency").default(1),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Clause templates for SmartMatch
 export const clauseTemplates = pgTable("clause_templates", {
   id: serial("id").primaryKey(),
@@ -196,6 +278,10 @@ export const usersRelations = relations(users, ({ many }) => ({
   emailMonitoring: many(emailMonitoring),
   clauseTemplates: many(clauseTemplates),
   smartMatchQueries: many(smartMatchQueries),
+  industryMemoryBanks: many(industryMemoryBanks),
+  industryModels: many(industryModels),
+  trainingLogs: many(trainingLogs),
+  enhancedSmartMatches: many(enhancedSmartMatches),
 }));
 
 export const rfpsRelations = relations(rfps, ({ one, many }) => ({
@@ -282,6 +368,31 @@ export const smartMatchQueriesRelations = relations(smartMatchQueries, ({ one })
   }),
 }));
 
+export const industryMemoryBanksRelations = relations(industryMemoryBanks, ({ one, many }) => ({
+  user: one(users, { fields: [industryMemoryBanks.userId], references: [users.id] }),
+  extractedFeatures: many(extractedFeatures),
+}));
+
+export const industryModelsRelations = relations(industryModels, ({ one, many }) => ({
+  user: one(users, { fields: [industryModels.userId], references: [users.id] }),
+  trainingLogs: many(trainingLogs),
+  enhancedSmartMatches: many(enhancedSmartMatches),
+}));
+
+export const trainingLogsRelations = relations(trainingLogs, ({ one }) => ({
+  user: one(users, { fields: [trainingLogs.userId], references: [users.id] }),
+  model: one(industryModels, { fields: [trainingLogs.modelId], references: [industryModels.id] }),
+}));
+
+export const enhancedSmartMatchesRelations = relations(enhancedSmartMatches, ({ one }) => ({
+  rfp: one(rfps, { fields: [enhancedSmartMatches.rfpId], references: [rfps.id] }),
+  user: one(users, { fields: [enhancedSmartMatches.userId], references: [users.id] }),
+}));
+
+export const extractedFeaturesRelations = relations(extractedFeatures, ({ one }) => ({
+  memoryBank: one(industryMemoryBanks, { fields: [extractedFeatures.memoryBankId], references: [industryMemoryBanks.id] }),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertRfpSchema = createInsertSchema(rfps).omit({ id: true, createdAt: true, updatedAt: true });
@@ -294,6 +405,11 @@ export const insertOauthTokenSchema = createInsertSchema(oauthTokens).omit({ id:
 export const insertEmailMonitoringSchema = createInsertSchema(emailMonitoring).omit({ id: true, createdAt: true });
 export const insertClauseTemplateSchema = createInsertSchema(clauseTemplates).omit({ id: true, createdAt: true, updatedAt: true });
 export const insertSmartMatchQuerySchema = createInsertSchema(smartMatchQueries).omit({ id: true, createdAt: true });
+export const insertIndustryMemoryBankSchema = createInsertSchema(industryMemoryBanks).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertIndustryModelSchema = createInsertSchema(industryModels).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertTrainingLogSchema = createInsertSchema(trainingLogs).omit({ id: true, createdAt: true });
+export const insertEnhancedSmartMatchSchema = createInsertSchema(enhancedSmartMatches).omit({ id: true, createdAt: true });
+export const insertExtractedFeatureSchema = createInsertSchema(extractedFeatures).omit({ id: true, createdAt: true });
 
 // Types
 export type UpsertUser = z.infer<typeof insertUserSchema>;
@@ -318,3 +434,13 @@ export type InsertClauseTemplate = z.infer<typeof insertClauseTemplateSchema>;
 export type ClauseTemplate = typeof clauseTemplates.$inferSelect;
 export type InsertSmartMatchQuery = z.infer<typeof insertSmartMatchQuerySchema>;
 export type SmartMatchQuery = typeof smartMatchQueries.$inferSelect;
+export type InsertIndustryMemoryBank = z.infer<typeof insertIndustryMemoryBankSchema>;
+export type IndustryMemoryBank = typeof industryMemoryBanks.$inferSelect;
+export type InsertIndustryModel = z.infer<typeof insertIndustryModelSchema>;
+export type IndustryModel = typeof industryModels.$inferSelect;
+export type InsertTrainingLog = z.infer<typeof insertTrainingLogSchema>;
+export type TrainingLog = typeof trainingLogs.$inferSelect;
+export type InsertEnhancedSmartMatch = z.infer<typeof insertEnhancedSmartMatchSchema>;
+export type EnhancedSmartMatch = typeof enhancedSmartMatches.$inferSelect;
+export type InsertExtractedFeature = z.infer<typeof insertExtractedFeatureSchema>;
+export type ExtractedFeature = typeof extractedFeatures.$inferSelect;

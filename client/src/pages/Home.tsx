@@ -92,6 +92,11 @@ export default function Home() {
       onClick: () => setShowSmartMatch(true) 
     },
     { 
+      icon: Database, 
+      label: "Industry AI", 
+      onClick: () => window.location.href = '/smartmatch' 
+    },
+    { 
       icon: Mail, 
       label: "Integrations", 
       onClick: () => setShowEmailIntegration(true) 

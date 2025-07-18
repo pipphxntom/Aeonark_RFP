@@ -905,6 +905,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Industry-specific SmartMatch routes
+  app.use('/api/industry-smartmatch', isAuthenticated, (await import('./routes/industrySmartMatch')).default);
+
   const httpServer = createServer(app);
   return httpServer;
 }
