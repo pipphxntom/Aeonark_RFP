@@ -78,20 +78,47 @@ export async function processUploadedFile(file: Express.Multer.File): Promise<Pr
 
 async function extractPdfText(filePath: string): Promise<string> {
   try {
-    // Use dynamic import to avoid module initialization issues
-    const { default: pdfParse } = await import('pdf-parse');
-    const dataBuffer = fs.readFileSync(filePath);
-    const pdfData = await pdfParse(dataBuffer);
-    
-    if (!pdfData.text || pdfData.text.trim().length === 0) {
-      console.log('PDF text extraction failed - no text content found');
-      throw new Error('PDF appears to be image-based or corrupted. Please try converting to an image format first.');
+    // Check if file exists first
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File does not exist');
     }
+
+    // Use pdf2pic to convert PDF to image, then use OCR
+    const { fromPath } = await import('pdf2pic');
     
-    return pdfData.text;
+    // Convert first page of PDF to image
+    const convert = fromPath(filePath, {
+      density: 100,
+      saveFilename: "pdf_page",
+      savePath: "/tmp",
+      format: "png",
+      width: 2048,
+      height: 2048
+    });
+    
+    try {
+      const result = await convert(1, { responseType: "image" });
+      
+      if (result && result.path) {
+        // Use OCR on the converted image
+        const extractedText = await extractImageText(result.path);
+        
+        // Clean up the temporary image file
+        if (fs.existsSync(result.path)) {
+          fs.unlinkSync(result.path);
+        }
+        
+        return extractedText;
+      } else {
+        throw new Error('Failed to convert PDF to image');
+      }
+    } catch (conversionError) {
+      console.error('PDF conversion error:', conversionError);
+      throw new Error('Unable to process PDF file. Please try uploading a DOCX or image file instead.');
+    }
   } catch (error) {
     console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF. Please ensure the file is readable and contains text content.');
+    throw new Error('Failed to extract text from PDF. Please try uploading a DOCX or image file instead.');
   }
 }
 
