@@ -24,11 +24,15 @@ export class DocumentClassifier {
    * Classify document type and validate if it's a real RFP/RFQ
    */
   async classifyDocument(text: string): Promise<DocumentClassification> {
+    console.log('🔍 Starting document classification...');
+    
     if (!process.env.GOOGLE_API_KEY) {
-      throw new Error('Google API key not configured');
+      console.log('⚠️ Google API key not configured, using fallback');
+      return this.getFallbackClassification(text);
     }
 
     try {
+      console.log('🤖 Using Gemini AI for classification...');
       const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `
@@ -85,49 +89,66 @@ VALIDATION RULES:
       
     } catch (error) {
       console.error('Document classification failed:', error);
-      
-      // Enhanced fallback with basic keyword detection
-      const lowerText = text.toLowerCase();
-      const rfpKeywords = ['request for proposal', 'rfp', 'rfq', 'request for quotation', 'scope of work', 'deliverables', 'timeline', 'proposal submission'];
-      const invoiceKeywords = ['invoice', 'invoice number', 'bill to', 'payment due', 'total amount', 'invoice date'];
-      const resumeKeywords = ['experience', 'education', 'skills', 'employment', 'resume', 'cv', 'curriculum vitae'];
-      
-      let type: DocumentClassification['type'] = 'Unknown';
-      let fitScore = 50; // Default reasonable score
-      let isValidRFP = false;
-      
-      // Simple keyword-based classification
-      if (rfpKeywords.some(keyword => lowerText.includes(keyword))) {
-        type = 'RFP';
-        fitScore = 75;
-        isValidRFP = true;
-      } else if (invoiceKeywords.some(keyword => lowerText.includes(keyword))) {
-        type = 'Invoice';
-        fitScore = 0;
-        isValidRFP = false;
-      } else if (resumeKeywords.some(keyword => lowerText.includes(keyword))) {
-        type = 'Resume';
-        fitScore = 0;
-        isValidRFP = false;
-      } else {
-        // If we can't classify, but it has business content, allow it through
-        fitScore = 60; // Give benefit of doubt
-        isValidRFP = true; // Allow processing
-      }
-      
-      return {
-        type,
-        confidence: 50,
-        fitScore,
-        reason: 'Classified using fallback keyword detection due to AI service unavailability',
-        extractedSections: {
-          scope: text.includes('scope') ? 'Document contains scope-related content' : undefined,
-          deliverables: text.includes('deliverable') ? 'Document mentions deliverables' : undefined
-        },
-        keywords: rfpKeywords.filter(keyword => lowerText.includes(keyword)),
-        isValidRFP
-      };
+      console.log('🔄 Falling back to keyword-based classification...');
+      return this.getFallbackClassification(text);
     }
+  }
+  
+  /**
+   * Fallback classification method using keyword detection
+   */
+  private getFallbackClassification(text: string): DocumentClassification {
+    console.log('📝 Using fallback classification system...');
+    
+    const lowerText = text.toLowerCase();
+    const rfpKeywords = ['request for proposal', 'rfp', 'rfq', 'request for quotation', 'scope of work', 'deliverables', 'timeline', 'proposal submission'];
+    const invoiceKeywords = ['invoice', 'invoice number', 'bill to', 'payment due', 'total amount', 'invoice date'];
+    const resumeKeywords = ['experience', 'education', 'skills', 'employment', 'resume', 'cv', 'curriculum vitae'];
+    
+    let type: DocumentClassification['type'] = 'RFP'; // Default to RFP
+    let fitScore = 75; // Default high score to allow through
+    let isValidRFP = true; // Default to valid
+    let reason = 'Document accepted as business document (fallback classification)';
+    
+    // Simple keyword-based classification
+    if (rfpKeywords.some(keyword => lowerText.includes(keyword))) {
+      type = 'RFP';
+      fitScore = 85;
+      isValidRFP = true;
+      reason = 'RFP keywords detected';
+      console.log('✅ RFP keywords found, classifying as RFP');
+    } else if (invoiceKeywords.some(keyword => lowerText.includes(keyword))) {
+      type = 'Invoice';
+      fitScore = 0;
+      isValidRFP = false;
+      reason = 'Invoice keywords detected';
+      console.log('❌ Invoice keywords found, rejecting');
+    } else if (resumeKeywords.some(keyword => lowerText.includes(keyword))) {
+      type = 'Resume';
+      fitScore = 0;
+      isValidRFP = false;
+      reason = 'Resume keywords detected';
+      console.log('❌ Resume keywords found, rejecting');
+    } else {
+      // Default case - accept as business document
+      console.log('✅ No specific keywords found, accepting as business document');
+    }
+    
+    const result = {
+      type,
+      confidence: 60,
+      fitScore,
+      reason,
+      extractedSections: {
+        scope: text.includes('scope') ? 'Document contains scope-related content' : undefined,
+        deliverables: text.includes('deliverable') ? 'Document mentions deliverables' : undefined
+      },
+      keywords: rfpKeywords.filter(keyword => lowerText.includes(keyword)),
+      isValidRFP
+    };
+    
+    console.log(`📊 Classification result: ${type}, fitScore: ${fitScore}, valid: ${isValidRFP}`);
+    return result;
   }
   
   /**

@@ -197,8 +197,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Process the uploaded file with enhanced document classification
       const processedFile = await processUploadedFile(file);
       
-      // Reject invalid documents with detailed feedback
-      if (!processedFile.isValidRFP) {
+      // Only reject clearly invalid documents (invoices, resumes)
+      if (!processedFile.isValidRFP && (processedFile.documentType === 'Invoice' || processedFile.documentType === 'Resume')) {
         return res.status(400).json({
           error: "Invalid Document Type",
           message: processedFile.rejectionReason || `This appears to be a ${processedFile.documentType.toLowerCase()}, not a valid RFP document.`,
@@ -215,7 +215,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // Warn if fit score is low but document was accepted
-      if (processedFile.fitScore < 60) {
+      if (processedFile.fitScore < 40) {
         console.warn(`⚠️ Low fit score (${processedFile.fitScore}) for document: ${processedFile.title}`);
       }
       
