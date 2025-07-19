@@ -24,10 +24,10 @@ export class ModelProvider {
   private initializeProvider() {
     switch (this.model) {
       case 'gemini':
-        if (!process.env.GEMINI_API_KEY) {
-          throw new Error('Gemini API key not configured');
+        if (!process.env.GOOGLE_API_KEY) {
+          throw new Error('Google API key not configured');
         }
-        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        this.genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY);
         break;
       case 'openai':
         throw new Error('OpenAI model deprecated. Please use Gemini instead.');

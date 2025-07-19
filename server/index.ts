@@ -13,7 +13,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 // Initialize database on startup
-// initializeDatabase().catch(console.error);
+initializeDatabase().catch(console.error);
 
 app.use((req, res, next) => {
   const start = Date.now();

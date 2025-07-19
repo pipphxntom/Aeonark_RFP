@@ -1,11 +1,11 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import type { Rfp, User } from "@shared/schema";
 
-const apiKey = process.env.GEMINI_API_KEY;
+const apiKey = process.env.GOOGLE_API_KEY;
 
-if (!apiKey || apiKey === 'your_gemini_api_key_here') {
-  console.warn('🤖 GEMINI_API_KEY not configured, AI features will be disabled');
-  console.warn('🤖 To enable AI: Replace GEMINI_API_KEY in .env with your actual Gemini API key');
+if (!apiKey || apiKey === 'your_google_api_key_here') {
+  console.warn('🤖 GOOGLE_API_KEY not configured, AI features will be disabled');
+  console.warn('🤖 To enable AI: Replace GOOGLE_API_KEY in .env with your actual Google API key');
 }
 
 const genAI = new GoogleGenerativeAI(apiKey || 'dummy-key');

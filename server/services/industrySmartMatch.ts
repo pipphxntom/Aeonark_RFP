@@ -14,7 +14,7 @@ import {
 } from "@shared/schema";
 import { eq, and, desc, sql } from "drizzle-orm";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY || '');
 
 // Industry-specific scoring weights configuration
 export const INDUSTRY_WEIGHTS = {
