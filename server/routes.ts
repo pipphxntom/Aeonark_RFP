@@ -8,6 +8,7 @@ import { processUploadedFile } from "./services/fileProcessor";
 import { sendEmail, generateOtpEmail } from "./services/emailService";
 import { SmartMatch } from "./smartmatch";
 import { PdfService } from "./smartmatch/pdf";
+import { documentFeedbackService } from "./services/documentFeedback";
 import multer from "multer";
 import path from "path";
 
@@ -193,29 +194,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "No file uploaded" });
       }
 
-      // Process the uploaded file with OCR and document type detection
+      // Process the uploaded file with enhanced document classification
       const processedFile = await processUploadedFile(file);
       
-      // Validate document type
-      if (processedFile.documentType === 'INVOICE') {
+      // Reject invalid documents with detailed feedback
+      if (!processedFile.isValidRFP) {
         return res.status(400).json({
-          error: "Invoice Document Detected",
-          message: "This appears to be an invoice, not an RFP. Please upload a Request for Proposal document for analysis.",
+          error: "Invalid Document Type",
+          message: processedFile.rejectionReason || `This appears to be a ${processedFile.documentType.toLowerCase()}, not a valid RFP document.`,
           documentType: processedFile.documentType,
-          confidence: processedFile.confidence
+          confidence: processedFile.confidence,
+          fitScore: processedFile.fitScore,
+          classification: processedFile.classification,
+          suggestions: [
+            "Please upload a Request for Proposal (RFP) or Request for Quotation (RFQ) document",
+            "Ensure the document contains sections like scope of work, deliverables, and evaluation criteria",
+            "Remove any invoice, receipt, or non-RFP documents from your upload"
+          ]
         });
       }
 
-      if (processedFile.documentType !== 'RFP' && processedFile.confidence > 0.7) {
-        return res.status(400).json({
-          error: "Non-RFP Document Detected", 
-          message: `This appears to be a ${processedFile.documentType.toLowerCase()}, not an RFP. Please upload a Request for Proposal document for analysis.`,
-          documentType: processedFile.documentType,
-          confidence: processedFile.confidence
-        });
+      // Warn if fit score is low but document was accepted
+      if (processedFile.fitScore < 60) {
+        console.warn(`⚠️ Low fit score (${processedFile.fitScore}) for document: ${processedFile.title}`);
       }
       
-      // Create RFP record with proper validation
+      // Create RFP record with enhanced metadata
       const rfpData = {
         userId,
         title: processedFile.title || file.originalname,
@@ -223,7 +227,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
         fileUrl: file.path,
         fileSize: file.size,
         extractedText: processedFile.extractedText,
+        documentType: processedFile.documentType,
         status: "uploaded" as const,
+        metadata: {
+          classification: processedFile.classification,
+          fitScore: processedFile.fitScore,
+          confidence: processedFile.confidence,
+          extractedSections: processedFile.classification.extractedSections,
+          validationPassed: true,
+          processedAt: new Date().toISOString()
+        }
       };
 
       const rfp = await storage.createRfp(rfpData);
@@ -989,6 +1002,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Industry-specific SmartMatch routes
   app.use('/api/industry-smartmatch', isAuthenticated, (await import('./routes/industrySmartMatch')).default);
+
+  // Document Feedback Routes
+  app.post('/api/rfps/:id/feedback', isAuthenticated, async (req: any, res) => {
+    try {
+      const rfpId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const { feedback, reason, suggestedType } = req.body;
+      
+      if (!['correct', 'incorrect'].includes(feedback)) {
+        return res.status(400).json({ message: "Invalid feedback type" });
+      }
+      
+      // Verify ownership
+      const rfp = await storage.getRfpById(rfpId);
+      if (!rfp || rfp.userId !== userId) {
+        return res.status(404).json({ message: "RFP not found" });
+      }
+      
+      await documentFeedbackService.markIncorrectSuggestion({
+        rfpId,
+        userId,
+        feedback: feedback as 'correct' | 'incorrect',
+        reason,
+        suggestedType
+      });
+      
+      res.json({ 
+        success: true, 
+        message: feedback === 'incorrect' ? 
+          "Thank you for the feedback. This document has been marked for review and will help improve our classification." :
+          "Thank you for confirming the classification accuracy!"
+      });
+    } catch (error) {
+      console.error("Error processing document feedback:", error);
+      res.status(500).json({ message: "Failed to process feedback" });
+    }
+  });
+  
+  app.get('/api/feedback/history', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const history = await documentFeedbackService.getUserFeedbackHistory(userId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching feedback history:", error);
+      res.status(500).json({ message: "Failed to fetch feedback history" });
+    }
+  });
 
   const httpServer = createServer(app);
   return httpServer;
