@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { FileUpload } from "@/components/ui/file-upload";
 import { SmartMatch } from "@/components/SmartMatch";
 import { AIGeneration } from "@/components/AIGeneration";
@@ -445,6 +445,9 @@ export default function Home() {
             <DialogTitle className="text-3xl font-bold text-center mb-6">
               Upload RFP Document
             </DialogTitle>
+            <DialogDescription className="text-center text-gray-400">
+              Upload your RFP or RFQ document to start generating winning proposals
+            </DialogDescription>
           </DialogHeader>
           <FileUpload onUploadSuccess={handleUploadSuccess} />
         </DialogContent>

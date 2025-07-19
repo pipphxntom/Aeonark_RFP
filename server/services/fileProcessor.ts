@@ -78,9 +78,8 @@ export async function processUploadedFile(file: Express.Multer.File): Promise<Pr
 
 async function extractPdfText(filePath: string): Promise<string> {
   try {
-    // Dynamic import to avoid the test file issue
-    const pdfParse = await import('pdf-parse');
-    const pdf = pdfParse.default;
+    // Use require to avoid dynamic import issues with pdf-parse
+    const pdf = require('pdf-parse');
     
     const dataBuffer = fs.readFileSync(filePath);
     const pdfData = await pdf(dataBuffer);
@@ -115,7 +114,19 @@ async function extractDocxText(filePath: string): Promise<string> {
 
 async function extractImageText(filePath: string): Promise<string> {
   try {
-    const worker = await createWorker('eng');
+    // Check if the file exists and is readable
+    if (!fs.existsSync(filePath)) {
+      throw new Error('File does not exist');
+    }
+
+    const worker = await createWorker('eng', 1, {
+      logger: m => {
+        if (m.status !== 'recognizing text') {
+          console.log(m);
+        }
+      }
+    });
+    
     const { data: { text } } = await worker.recognize(filePath);
     await worker.terminate();
     return text;
