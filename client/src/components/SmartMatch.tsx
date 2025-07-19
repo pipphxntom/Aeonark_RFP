@@ -45,6 +45,7 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
           valueRange: 50, // Default for old data
           pastWinSimilarity: 50 // Default for old data
         },
+        documentSummary: data.analysisDetails?.documentSummary || null,
         details: data.analysisDetails?.details || {
           serviceReason: "Analysis not available",
           industryReason: "Analysis not available", 

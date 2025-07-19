@@ -311,6 +311,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             verdict: analysis.verdict,
             breakdown: analysis.breakdown,
             details: analysis.details,
+            documentSummary: analysis.documentSummary,
           },
         });
 
