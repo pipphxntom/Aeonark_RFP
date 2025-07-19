@@ -8,7 +8,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { X, TrendingUp, CheckCircle, AlertTriangle, XCircle, Target, Clock, Award, DollarSign, Users, Settings } from "lucide-react";
+import { X, TrendingUp, CheckCircle, AlertTriangle, XCircle, Target, Clock, Award, DollarSign, Users, Settings, FileText, CheckCircle2, ChevronDown, ChevronUp, Lightbulb, ArrowRight } from "lucide-react";
 
 interface SmartMatchProps {
   onClose: () => void;
@@ -19,6 +19,8 @@ interface SmartMatchProps {
 export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProps) {
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
   const { toast } = useToast();
 
 
@@ -302,13 +304,57 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-blue-400" />
-                    RFP Document Summary
+                    Document Analysis
                   </CardTitle>
                   <CardDescription>
-                    Key insights extracted from the RFP document
+                    Detailed analysis of the uploaded document
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-6">
+                  {/* Document Metadata */}
+                  <div className="grid md:grid-cols-3 gap-4 p-4 bg-gray-800 rounded-lg">
+                    <div>
+                      <h4 className="font-semibold text-neon-cyan mb-1">Document Name</h4>
+                      <p className="text-sm text-gray-300">{smartMatch.documentSummary.documentName || 'Unknown'}</p>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-neon-cyan mb-1">Document Type</h4>
+                      <Badge className={`${
+                        smartMatch.documentSummary.documentType === 'rfp' ? 'bg-green-600' :
+                        smartMatch.documentSummary.documentType === 'resume' ? 'bg-blue-600' :
+                        smartMatch.documentSummary.documentType === 'industry_paper' ? 'bg-purple-600' :
+                        smartMatch.documentSummary.documentType === 'audit_paper' ? 'bg-orange-600' :
+                        'bg-gray-600'
+                      } text-white`}>
+                        {smartMatch.documentSummary.documentType?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
+                      </Badge>
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-neon-cyan mb-1">Key Entities</h4>
+                      <div className="flex flex-wrap gap-1">
+                        {smartMatch.documentSummary.keyEntities?.slice(0, 3).map((entity, i) => (
+                          <Badge key={i} variant="outline" className="text-xs text-neon-green border-neon-green">
+                            {entity}
+                          </Badge>
+                        ))}
+                        {smartMatch.documentSummary.keyEntities?.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{smartMatch.documentSummary.keyEntities.length - 3}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Content Summary */}
+                  <div className="p-4 bg-gray-800 rounded-lg">
+                    <h4 className="font-semibold text-neon-cyan mb-3">Document Summary</h4>
+                    <p className="text-gray-200 leading-relaxed">
+                      {smartMatch.documentSummary.contentSummary || 'Content summary not available'}
+                    </p>
+                  </div>
+
+                  {/* Document Details Grid */}
                   <div className="grid md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                       <div>
@@ -322,6 +368,20 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
                           ))}
                         </ul>
                       </div>
+
+                      {smartMatch.documentSummary.technicalSpecs && smartMatch.documentSummary.technicalSpecs.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-sm text-gray-300 mb-2">Technical Specifications</h4>
+                          <ul className="space-y-1 text-sm">
+                            {smartMatch.documentSummary.technicalSpecs.map((spec, i) => (
+                              <li key={i} className="flex items-start gap-2">
+                                <Settings className="h-4 w-4 text-blue-400 mt-0.5 flex-shrink-0" />
+                                <span className="text-gray-200">{spec}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       
                       <div>
                         <h4 className="font-semibold text-sm text-gray-300 mb-2">Expected Deliverables</h4>
@@ -431,44 +491,88 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
               })}
             </div>
 
-            {/* Detailed Explanations */}
-            <Card className="glass-morphism">
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Settings className="h-5 w-5 mr-2" />
-                  Detailed Analysis
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {smartMatch.details.explainability && smartMatch.details.explainability.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2 text-neon-cyan">Key Insights</h4>
-                    <ul className="space-y-1">
-                      {smartMatch.details.explainability.map((insight: string, index: number) => (
-                        <li key={index} className="text-gray-300 text-sm flex items-start">
-                          <span className="text-neon-green mr-2">•</span>
-                          {insight}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                
-                {smartMatch.details.recommendations && smartMatch.details.recommendations.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold mb-2 text-neon-cyan">Recommendations</h4>
-                    <ul className="space-y-1">
-                      {smartMatch.details.recommendations.map((rec: string, index: number) => (
-                        <li key={index} className="text-gray-300 text-sm flex items-start">
-                          <span className="text-yellow-400 mr-2">→</span>
-                          {rec}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Collapsible Insights and Recommendations */}
+            <div className="space-y-4">
+              {/* Key Insights Section */}
+              {smartMatch.details.explainability && smartMatch.details.explainability.length > 0 && (
+                <Card className="glass-morphism">
+                  <CardHeader className="pb-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowInsights(!showInsights)}
+                      className="w-full justify-between p-0 hover:bg-transparent text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Lightbulb className="h-5 w-5 text-neon-cyan" />
+                        <span className="font-semibold text-neon-cyan">Key Insights</span>
+                        <Badge variant="outline" className="text-xs">
+                          {smartMatch.details.explainability.length}
+                        </Badge>
+                      </div>
+                      {showInsights ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CardHeader>
+                  {showInsights && (
+                    <CardContent className="pt-0">
+                      <ul className="space-y-3">
+                        {smartMatch.details.explainability.map((insight: string, index: number) => (
+                          <motion.li 
+                            key={index} 
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="text-gray-300 text-sm flex items-start p-3 bg-gray-800 rounded-lg"
+                          >
+                            <span className="text-neon-green mr-3 mt-0.5">•</span>
+                            <span>{insight}</span>
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  )}
+                </Card>
+              )}
+
+              {/* Recommendations Section */}
+              {smartMatch.details.recommendations && smartMatch.details.recommendations.length > 0 && (
+                <Card className="glass-morphism">
+                  <CardHeader className="pb-3">
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowRecommendations(!showRecommendations)}
+                      className="w-full justify-between p-0 hover:bg-transparent text-left"
+                    >
+                      <div className="flex items-center gap-2">
+                        <ArrowRight className="h-5 w-5 text-yellow-400" />
+                        <span className="font-semibold text-yellow-400">Recommendations</span>
+                        <Badge variant="outline" className="text-xs">
+                          {smartMatch.details.recommendations.length}
+                        </Badge>
+                      </div>
+                      {showRecommendations ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </Button>
+                  </CardHeader>
+                  {showRecommendations && (
+                    <CardContent className="pt-0">
+                      <ul className="space-y-3">
+                        {smartMatch.details.recommendations.map((rec: string, index: number) => (
+                          <motion.li 
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
+                            className="text-gray-300 text-sm flex items-start p-3 bg-gray-800 rounded-lg"
+                          >
+                            <ArrowRight className="h-4 w-4 text-yellow-400 mr-3 mt-0.5 flex-shrink-0" />
+                            <span>{rec}</span>
+                          </motion.li>
+                        ))}
+                      </ul>
+                    </CardContent>
+                  )}
+                </Card>
+              )}
+            </div>
 
             {/* Action Buttons */}
             <div className="flex gap-4 justify-center pt-6">
