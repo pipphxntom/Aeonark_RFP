@@ -23,7 +23,8 @@ import {
   LogOut,
   Settings,
   Edit,
-  Mail
+  Mail,
+  Brain
 } from "lucide-react";
 import { AnimatedIcon } from "@/components/AnimatedIcon";
 import { ProposalEditor } from "@/components/ProposalEditor";
@@ -95,6 +96,11 @@ export default function Home() {
       icon: Database, 
       label: "Industry AI", 
       onClick: () => window.location.href = '/smartmatch' 
+    },
+    { 
+      icon: Brain, 
+      label: "AI Intelligence", 
+      onClick: () => window.location.href = '/smartmatch-intelligence' 
     },
     { 
       icon: Mail, 

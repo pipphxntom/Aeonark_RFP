@@ -58,7 +58,7 @@ export const rfps = pgTable("rfps", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// SmartMatch analysis results
+// SmartMatch analysis results with enhanced intelligence
 export const smartMatches = pgTable("smart_matches", {
   id: serial("id").primaryKey(),
   rfpId: integer("rfp_id").notNull().references(() => rfps.id),
@@ -67,8 +67,105 @@ export const smartMatches = pgTable("smart_matches", {
   servicesMatch: integer("services_match").notNull(),
   timelineMatch: integer("timeline_match").notNull(),
   certificationsMatch: integer("certifications_match").notNull(),
+  technicalFit: integer("technical_fit").notNull().default(0),
+  strategicAlignment: integer("strategic_alignment").notNull().default(0),
+  recentRelevance: integer("recent_relevance").notNull().default(0),
   analysisDetails: jsonb("analysis_details"),
+  vectorEmbedding: text("vector_embedding").array(),
+  extractedMetadata: jsonb("extracted_metadata"),
+  feedbackScore: integer("feedback_score").default(0),
+  userFeedback: jsonb("user_feedback"),
+  confidenceLevel: decimal("confidence_level", { precision: 3, scale: 2 }).default("0.5"),
+  modelVersion: varchar("model_version").default("1.0"),
   createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Vector index for RFP embeddings
+export const rfpVectorIndex = pgTable("rfp_vector_index", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").notNull().references(() => rfps.id),
+  sectionType: varchar("section_type").notNull(), // scope, deadline, eligibility, evaluation
+  content: text("content").notNull(),
+  vectorEmbedding: text("vector_embedding").array(),
+  metadata: jsonb("metadata"),
+  industry: varchar("industry"),
+  location: varchar("location"),
+  budgetRange: varchar("budget_range"),
+  keywords: text("keywords").array(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Document classification and filtering
+export const documentClassifications = pgTable("document_classifications", {
+  id: serial("id").primaryKey(),
+  rfpId: integer("rfp_id").notNull().references(() => rfps.id),
+  documentType: varchar("document_type").notNull(),
+  isValidRFP: boolean("is_valid_rfp").notNull(),
+  classification: jsonb("classification"),
+  filterReason: text("filter_reason"),
+  languagePatterns: text("language_patterns").array(),
+  metadataTags: text("metadata_tags").array(),
+  confidenceScore: decimal("confidence_score", { precision: 3, scale: 2 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// User feedback and learning system
+export const smartmatchFeedback = pgTable("smartmatch_feedback", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  smartMatchId: integer("smart_match_id").notNull().references(() => smartMatches.id),
+  feedbackType: varchar("feedback_type").notNull(), // upvote, downvote, rating
+  rating: integer("rating"), // 1-5 star rating
+  comments: text("comments"),
+  improvedScore: integer("improved_score"),
+  contextualData: jsonb("contextual_data"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Historical proposal memory bank
+export const proposalMemoryBank = pgTable("proposal_memory_bank", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  proposalId: integer("proposal_id").references(() => proposals.id),
+  rfpId: integer("rfp_id").references(() => rfps.id),
+  outcome: varchar("outcome").notNull(), // won, lost, pending
+  domain: varchar("domain").notNull(),
+  industry: varchar("industry").notNull(),
+  projectValue: decimal("project_value", { precision: 12, scale: 2 }),
+  successFactors: text("success_factors").array(),
+  templateContent: text("template_content"),
+  vectorEmbedding: text("vector_embedding").array(),
+  tags: text("tags").array(),
+  metadata: jsonb("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Learning weights and model updates
+export const smartmatchLearningWeights = pgTable("smartmatch_learning_weights", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  category: varchar("category").notNull(), // industry, services, timeline, certifications
+  weight: decimal("weight", { precision: 4, scale: 3 }).notNull().default("1.0"),
+  adjustmentReason: text("adjustment_reason"),
+  previousWeight: decimal("previous_weight", { precision: 4, scale: 3 }),
+  feedbackCount: integer("feedback_count").default(0),
+  lastAdjusted: timestamp("last_adjusted").defaultNow(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Email ingestion tracking
+export const emailIngestionLogs = pgTable("email_ingestion_logs", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").notNull().references(() => users.id),
+  provider: varchar("provider").notNull(), // gmail, outlook
+  messageId: text("message_id").notNull(),
+  subject: text("subject"),
+  sender: text("sender"),
+  attachmentCount: integer("attachment_count").default(0),
+  documentsExtracted: integer("documents_extracted").default(0),
+  classificationResults: jsonb("classification_results"),
+  processedAt: timestamp("processed_at").defaultNow(),
 });
 
 // Industry-specific memory banks and training data

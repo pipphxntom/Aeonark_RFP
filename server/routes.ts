@@ -627,6 +627,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Enhanced SmartMatch Intelligence Routes
+  const smartMatch = new SmartMatch();
+
+  // Deep RFP Analysis
+  app.post('/api/smartmatch/analyze-deep', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { rfpId, content } = req.body;
+
+      if (!rfpId || !content) {
+        return res.status(400).json({ message: "RFP ID and content are required" });
+      }
+
+      const analysis = await smartMatch.analyzeRFPDeep(rfpId, userId, content);
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error in deep RFP analysis:", error);
+      res.status(500).json({ message: "Failed to analyze RFP" });
+    }
+  });
+
+  // Submit feedback for SmartMatch learning
+  app.post('/api/smartmatch/feedback', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { smartMatchId, rating, feedbackType, comments, improvedScore } = req.body;
+
+      if (!smartMatchId || !rating || !feedbackType) {
+        return res.status(400).json({ message: "SmartMatch ID, rating, and feedback type are required" });
+      }
+
+      const result = await smartMatch.processFeedback(userId, smartMatchId, {
+        rating,
+        feedbackType,
+        comments,
+        improvedScore
+      });
+
+      res.json(result);
+    } catch (error) {
+      console.error("Error processing feedback:", error);
+      res.status(500).json({ message: "Failed to process feedback" });
+    }
+  });
+
+  // Get personalized recommendations
+  app.get('/api/smartmatch/recommendations', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const recommendations = await smartMatch.getPersonalizedRecommendations(userId);
+      res.json({ recommendations });
+    } catch (error) {
+      console.error("Error getting recommendations:", error);
+      res.status(500).json({ message: "Failed to get recommendations" });
+    }
+  });
+
+  // Vector similarity search
+  app.post('/api/smartmatch/search-similar', isAuthenticated, async (req: any, res) => {
+    try {
+      const { query, filters, limit } = req.body;
+
+      if (!query) {
+        return res.status(400).json({ message: "Search query is required" });
+      }
+
+      const results = await smartMatch.findSimilarRFPs(query, filters || {}, limit || 10);
+      res.json({ results });
+    } catch (error) {
+      console.error("Error in similarity search:", error);
+      res.status(500).json({ message: "Failed to search similar RFPs" });
+    }
+  });
+
+  // Email ingestion routes
+  app.post('/api/smartmatch/ingest-emails', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { provider } = req.body;
+
+      const result = await smartMatch.ingestEmailsForUser(userId, provider);
+      res.json(result);
+    } catch (error) {
+      console.error("Error ingesting emails:", error);
+      res.status(500).json({ message: "Failed to ingest emails" });
+    }
+  });
+
+  app.get('/api/smartmatch/email-status', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const status = await smartMatch.getEmailIngestionStatus(userId);
+      res.json(status);
+    } catch (error) {
+      console.error("Error getting email status:", error);
+      res.status(500).json({ message: "Failed to get email status" });
+    }
+  });
+
+  // SmartMatch analytics
+  app.get('/api/smartmatch/analytics', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const analytics = await smartMatch.getAnalytics(userId);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error getting SmartMatch analytics:", error);
+      res.status(500).json({ message: "Failed to get analytics" });
+    }
+  });
+
   // OAuth Integration Routes
   app.post("/api/oauth/connect", isAuthenticated, async (req, res) => {
     try {

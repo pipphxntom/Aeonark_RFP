@@ -9,6 +9,7 @@ import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
 import Onboarding from "@/pages/Onboarding";
 import SmartMatch from "@/pages/SmartMatch";
+import SmartMatchIntelligence from "@/pages/SmartMatchIntelligence";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -47,6 +48,9 @@ function Router() {
       </Route>
       <Route path="/smartmatch">
         {isAuthenticated && (user as any)?.isOnboardingComplete ? <SmartMatch /> : <Landing />}
+      </Route>
+      <Route path="/smartmatch-intelligence">
+        {isAuthenticated && (user as any)?.isOnboardingComplete ? <SmartMatchIntelligence /> : <Landing />}
       </Route>
       <Route component={NotFound} />
     </Switch>
