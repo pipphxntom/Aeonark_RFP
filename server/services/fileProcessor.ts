@@ -78,27 +78,20 @@ export async function processUploadedFile(file: Express.Multer.File): Promise<Pr
 
 async function extractPdfText(filePath: string): Promise<string> {
   try {
-    // Use require to avoid dynamic import issues with pdf-parse
-    const pdf = require('pdf-parse');
-    
+    // Use dynamic import to avoid module initialization issues
+    const { default: pdfParse } = await import('pdf-parse');
     const dataBuffer = fs.readFileSync(filePath);
-    const pdfData = await pdf(dataBuffer);
+    const pdfData = await pdfParse(dataBuffer);
     
     if (!pdfData.text || pdfData.text.trim().length === 0) {
-      console.log('PDF text extraction failed, attempting OCR fallback');
-      return await extractImageText(filePath);
+      console.log('PDF text extraction failed - no text content found');
+      throw new Error('PDF appears to be image-based or corrupted. Please try converting to an image format first.');
     }
     
     return pdfData.text;
   } catch (error) {
     console.error('Error extracting PDF text:', error);
-    // Fallback to OCR if regular text extraction fails
-    try {
-      return await extractImageText(filePath);
-    } catch (ocrError) {
-      console.error('OCR fallback failed:', ocrError);
-      throw new Error('Failed to extract text from PDF. Please ensure the file is readable.');
-    }
+    throw new Error('Failed to extract text from PDF. Please ensure the file is readable and contains text content.');
   }
 }
 
