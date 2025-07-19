@@ -83,42 +83,45 @@ async function extractPdfText(filePath: string): Promise<string> {
       throw new Error('File does not exist');
     }
 
-    // Use pdf2pic to convert PDF to image, then use OCR
-    const { fromPath } = await import('pdf2pic');
+    // Use pdfjs-dist for pure JavaScript PDF text extraction
+    const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.js');
     
-    // Convert first page of PDF to image
-    const convert = fromPath(filePath, {
-      density: 100,
-      saveFilename: "pdf_page",
-      savePath: "/tmp",
-      format: "png",
-      width: 2048,
-      height: 2048
-    });
+    // Read the PDF file as buffer
+    const dataBuffer = fs.readFileSync(filePath);
+    const data = new Uint8Array(dataBuffer);
     
-    try {
-      const result = await convert(1, { responseType: "image" });
-      
-      if (result && result.path) {
-        // Use OCR on the converted image
-        const extractedText = await extractImageText(result.path);
+    // Load the PDF document
+    const pdf = await pdfjsLib.getDocument({ data }).promise;
+    let fullText = '';
+    
+    // Extract text from all pages (limit to first 10 pages for performance)
+    const numPages = Math.min(pdf.numPages, 10);
+    
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      try {
+        const page = await pdf.getPage(pageNum);
+        const textContent = await page.getTextContent();
         
-        // Clean up the temporary image file
-        if (fs.existsSync(result.path)) {
-          fs.unlinkSync(result.path);
-        }
+        // Extract text items and join them
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
         
-        return extractedText;
-      } else {
-        throw new Error('Failed to convert PDF to image');
+        fullText += pageText + '\n';
+      } catch (pageError) {
+        console.warn(`Error extracting text from page ${pageNum}:`, pageError);
+        // Continue with other pages
       }
-    } catch (conversionError) {
-      console.error('PDF conversion error:', conversionError);
-      throw new Error('Unable to process PDF file. Please try uploading a DOCX or image file instead.');
     }
+    
+    if (!fullText.trim()) {
+      throw new Error('No text content found in PDF. The file may be image-based or corrupted.');
+    }
+    
+    return fullText.trim();
   } catch (error) {
     console.error('Error extracting PDF text:', error);
-    throw new Error('Failed to extract text from PDF. Please try uploading a DOCX or image file instead.');
+    throw new Error('Failed to extract text from PDF. Please ensure the file contains readable text content.');
   }
 }
 
