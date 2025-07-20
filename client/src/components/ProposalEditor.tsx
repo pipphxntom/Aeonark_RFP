@@ -71,36 +71,36 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
     {
       id: "executive-summary",
       title: "Executive Summary",
-      content: proposal?.executiveSummary || "",
-      status: proposal?.executiveSummary ? "done" : "pending",
+      content: (proposal as any)?.executiveSummary || "",
+      status: (proposal as any)?.executiveSummary ? "done" : "pending",
       icon: FileText,
     },
     {
       id: "scope-of-work",
       title: "Scope of Work",
-      content: proposal?.scopeOfWork || "",
-      status: proposal?.scopeOfWork ? "done" : "pending",
+      content: (proposal as any)?.scopeOfWork || "",
+      status: (proposal as any)?.scopeOfWork ? "done" : "pending",
       icon: Edit3,
     },
     {
       id: "timeline",
       title: "Timeline",
-      content: proposal?.timeline || "",
-      status: proposal?.timeline ? "done" : "pending",
+      content: (proposal as any)?.timeline || "",
+      status: (proposal as any)?.timeline ? "done" : "pending",
       icon: Clock,
     },
     {
       id: "pricing",
       title: "Pricing Table",
-      content: JSON.stringify(proposal?.pricing || {}, null, 2),
-      status: proposal?.pricing ? "done" : "pending",
+      content: JSON.stringify((proposal as any)?.pricing || {}, null, 2),
+      status: (proposal as any)?.pricing ? "done" : "pending",
       icon: CheckCircle,
     },
     {
       id: "legal-terms",
       title: "Legal Terms",
-      content: proposal?.legalTerms || "",
-      status: proposal?.legalTerms ? "done" : "needs_action",
+      content: (proposal as any)?.legalTerms || "",
+      status: (proposal as any)?.legalTerms ? "done" : "needs_action",
       icon: AlertCircle,
     },
   ];
@@ -222,7 +222,7 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
               </Button>
               <Separator orientation="vertical" className="h-6" />
               <div>
-                <h1 className="text-xl font-bold">{proposal?.title}</h1>
+                <h1 className="text-xl font-bold">{(proposal as any)?.title || 'Loading...'}</h1>
                 <p className="text-sm text-gray-400">Proposal Editor Workspace</p>
               </div>
             </div>

@@ -74,6 +74,11 @@ export function AnalyticsDashboard() {
     queryKey: ["/api/analytics/summary"],
   });
 
+  // Fetch timeline data for charts
+  const { data: timelineData = [] } = useQuery<TimelineData[]>({
+    queryKey: ["/api/analytics/timeline", timeRange],
+  });
+
   // Show empty state if no data
   if (!analytics?.hasData && !isLoading) {
     return (
@@ -88,11 +93,6 @@ export function AnalyticsDashboard() {
       </div>
     );
   }
-
-  // Fetch timeline data for charts
-  const { data: timelineData = [] } = useQuery<TimelineData[]>({
-    queryKey: ["/api/analytics/timeline", timeRange],
-  });
 
   // Mock data for demonstration - replace with real API calls
   const industryData: IndustryData[] = [
