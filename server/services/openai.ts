@@ -21,6 +21,18 @@ export interface SmartMatchAnalysis {
     pastWinSimilarity: number;
   };
   verdict: string;
+  documentSummary?: {
+    documentName: string;
+    documentType: string;
+    keyEntities: string[];
+    contentSummary: string;
+    keyRequirements: string[];
+    deliverables: string[];
+    budget: string;
+    timeline: string;
+    technicalSpecs: string[];
+    industryContext: string;
+  };
   details: {
     serviceReason: string;
     industryReason: string;

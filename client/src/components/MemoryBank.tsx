@@ -21,7 +21,8 @@ import {
   Clock,
   DollarSign,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from "lucide-react";
 
 interface MemoryBankProps {
