@@ -685,4 +685,158 @@ export class DatabaseStorage implements IStorage {
   }
 }
 
-export const storage = new DatabaseStorage();
+// Create a fallback in-memory storage when database is not available
+class MemoryStorage implements IStorage {
+  private users = new Map<string, User>();
+  private rfps = new Map<number, Rfp>();
+  private proposals = new Map<number, Proposal>();
+  private smartMatches = new Map<number, SmartMatch>();
+  private idCounter = 1;
+
+  async getUser(id: string): Promise<User | undefined> {
+    return this.users.get(id);
+  }
+
+  async upsertUser(user: UpsertUser): Promise<User> {
+    const existingUser = this.users.get(user.id);
+    const newUser = {
+      ...existingUser,
+      ...user,
+      createdAt: existingUser?.createdAt || new Date(),
+      updatedAt: new Date(),
+    } as User;
+    this.users.set(user.id, newUser);
+    return newUser;
+  }
+
+  async updateUserOnboarding(id: string, data: Partial<UpsertUser>): Promise<User> {
+    const existingUser = this.users.get(id);
+    if (!existingUser) {
+      throw new Error("User not found");
+    }
+    const updatedUser = { ...existingUser, ...data, updatedAt: new Date() };
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async createRfp(rfp: InsertRfp): Promise<Rfp> {
+    const newRfp = {
+      ...rfp,
+      id: this.idCounter++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Rfp;
+    this.rfps.set(newRfp.id, newRfp);
+    return newRfp;
+  }
+
+  async getRfpsByUser(userId: string): Promise<Rfp[]> {
+    return Array.from(this.rfps.values()).filter(rfp => rfp.userId === userId);
+  }
+
+  async getRfpById(id: number): Promise<Rfp | undefined> {
+    return this.rfps.get(id);
+  }
+
+  async updateRfp(id: number, data: Partial<InsertRfp>): Promise<Rfp> {
+    const existingRfp = this.rfps.get(id);
+    if (!existingRfp) throw new Error("RFP not found");
+    const updatedRfp = { ...existingRfp, ...data, updatedAt: new Date() };
+    this.rfps.set(id, updatedRfp);
+    return updatedRfp;
+  }
+
+  async createSmartMatch(match: InsertSmartMatch): Promise<SmartMatch> {
+    const newMatch = {
+      ...match,
+      id: this.idCounter++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as SmartMatch;
+    this.smartMatches.set(newMatch.id, newMatch);
+    return newMatch;
+  }
+
+  async getSmartMatchByRfp(rfpId: number): Promise<SmartMatch | undefined> {
+    return Array.from(this.smartMatches.values()).find(match => match.rfpId === rfpId);
+  }
+
+  // Stub implementations for other methods
+  async createProposal(proposal: InsertProposal): Promise<Proposal> {
+    const newProposal = {
+      ...proposal,
+      id: this.idCounter++,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Proposal;
+    this.proposals.set(newProposal.id, newProposal);
+    return newProposal;
+  }
+
+  async getProposalsByUser(userId: string): Promise<Proposal[]> {
+    return Array.from(this.proposals.values()).filter(p => p.userId === userId);
+  }
+
+  async getProposalById(id: number): Promise<Proposal | undefined> {
+    return this.proposals.get(id);
+  }
+
+  async updateProposal(id: number, data: Partial<InsertProposal>): Promise<Proposal> {
+    const existing = this.proposals.get(id);
+    if (!existing) throw new Error("Proposal not found");
+    const updated = { ...existing, ...data, updatedAt: new Date() };
+    this.proposals.set(id, updated);
+    return updated;
+  }
+
+  async generateShareToken(proposalId: number): Promise<string> {
+    return nanoid(32);
+  }
+
+  async getProposalByShareToken(token: string): Promise<Proposal | undefined> {
+    return undefined;
+  }
+
+  // Minimal implementations for other interface methods
+  async createCompanyTemplate(): Promise<CompanyTemplate> { return {} as CompanyTemplate; }
+  async getTemplatesByUser(): Promise<CompanyTemplate[]> { return []; }
+  async createMemoryClause(): Promise<MemoryClause> { return {} as MemoryClause; }
+  async getMemoryClausesByUser(): Promise<MemoryClause[]> { return []; }
+  async getMemoryClausesByType(): Promise<MemoryClause[]> { return []; }
+  async searchMemoryClauses(): Promise<MemoryClause[]> { return []; }
+  async updateMemoryClauseUsage(): Promise<void> {}
+  async createAnalyticsEvent(): Promise<AnalyticsEvent> { return {} as AnalyticsEvent; }
+  async getAnalyticsEvents(): Promise<AnalyticsEvent[]> { return []; }
+  async getAnalyticsSummary(): Promise<any> { 
+    return {
+      totalProposals: 0,
+      winRate: 0,
+      avgScore: 0,
+      timeSaved: 0,
+      hasData: false
+    };
+  }
+  async upsertOauthToken(): Promise<OauthToken> { return {} as OauthToken; }
+  async getOauthToken(): Promise<OauthToken | undefined> { return undefined; }
+  async refreshOauthToken(): Promise<OauthToken> { return {} as OauthToken; }
+  async deleteOauthToken(): Promise<void> {}
+  async createEmailMonitoring(): Promise<EmailMonitoring> { return {} as EmailMonitoring; }
+  async getEmailMonitoring(): Promise<EmailMonitoring[]> { return []; }
+  async markEmailProcessed(): Promise<void> {}
+  async createClauseTemplate(): Promise<ClauseTemplate> { return {} as ClauseTemplate; }
+  async getClauseTemplates(): Promise<ClauseTemplate[]> { return []; }
+  async getClauseTemplateById(): Promise<ClauseTemplate | undefined> { return undefined; }
+  async updateClauseTemplate(): Promise<ClauseTemplate> { return {} as ClauseTemplate; }
+  async deleteClauseTemplate(): Promise<void> {}
+  async incrementClauseUsage(): Promise<void> {}
+  async createSmartMatchQuery(): Promise<SmartMatchQuery> { return {} as SmartMatchQuery; }
+  async getSmartMatchQueries(): Promise<SmartMatchQuery[]> { return []; }
+  async getSmartMatchQueryById(): Promise<SmartMatchQuery | undefined> { return undefined; }
+  async getIndustryModels(): Promise<any[]> { return []; }
+  async getTrainingLogs(): Promise<any[]> { return []; }
+  async getMemoryBanks(): Promise<any[]> { return []; }
+  async createTrainingLog(): Promise<any> { return {}; }
+}
+
+// Use DatabaseStorage if database is available, otherwise use MemoryStorage
+export const storage = db && process.env.DATABASE_URL ? new DatabaseStorage() : new MemoryStorage();

@@ -79,21 +79,6 @@ export function AnalyticsDashboard() {
     queryKey: ["/api/analytics/timeline", timeRange],
   });
 
-  // Show empty state if no data
-  if (!analytics?.hasData && !isLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-20">
-            <Activity className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h2 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">No Analytics Data Yet</h2>
-            <p className="text-gray-500">Upload and analyze RFPs to see your performance metrics</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   // Mock data for demonstration - replace with real API calls
   const industryData: IndustryData[] = [
     { name: "Technology", value: 35, outcome: "won", color: "#00D4FF" },
@@ -117,12 +102,28 @@ export function AnalyticsDashboard() {
     { name: "IP Protection Standard", usage: 55, winRate: 91 }
   ];
 
+  // Show loading state
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-950 flex items-center justify-center">
         <div className="text-center">
           <Activity className="w-8 h-8 mx-auto mb-3 animate-pulse text-cyan-400" />
           <div className="text-xl text-gray-400">Loading analytics dashboard...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show empty state if no data
+  if (!analytics?.hasData) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900">
+        <div className="container mx-auto px-4 py-8">
+          <div className="text-center py-20">
+            <Activity className="w-16 h-16 mx-auto text-gray-400 mb-4" />
+            <h2 className="text-2xl font-bold text-gray-600 dark:text-gray-400 mb-2">No Analytics Data Yet</h2>
+            <p className="text-gray-500">Upload and analyze RFPs to see your performance metrics</p>
+          </div>
         </div>
       </div>
     );

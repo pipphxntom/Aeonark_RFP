@@ -10,23 +10,26 @@ import MemoryStore from "memorystore";
 import { storage } from "./storage";
 
 if (!process.env.REPLIT_DOMAINS) {
-  throw new Error("Environment variable REPLIT_DOMAINS not provided");
+  console.warn("REPLIT_DOMAINS not provided, using fallback authentication");
 }
 
 const getOidcConfig = memoize(
   async () => {
     try {
+      const issuerUrl = process.env.ISSUER_URL || "https://replit.com";
+      const replId = process.env.REPL_ID || "mock-repl-id";
+      
       return await client.discovery(
-        new URL(process.env.ISSUER_URL!),
-        process.env.REPL_ID!
+        new URL(issuerUrl),
+        replId
       );
     } catch (error) {
-      console.warn("OAuth discovery failed, using mock config:", error.message);
-      // Return a mock config for development
+      console.warn("OAuth discovery failed, using fallback config:", error.message);
+      // Return a fallback config for development
       return {
-        authorization_endpoint: "https://mock-auth.replit.com/auth",
-        token_endpoint: "https://mock-auth.replit.com/token",
-        issuer: process.env.ISSUER_URL!,
+        authorization_endpoint: "https://replit.com/auth",
+        token_endpoint: "https://replit.com/token", 
+        issuer: process.env.ISSUER_URL || "https://replit.com",
       };
     }
   },

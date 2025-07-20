@@ -16,24 +16,28 @@ export async function initializeDatabase() {
   console.log('🔌 Connecting to database...');
   
   try {
-    // Test database connection
-    const result = await db.execute('SELECT NOW()');
-    console.log('✅ Database connection successful');
-    
-    // Only run migrations if database connection is successful
-    const migrationsPath = join(process.cwd(), 'migrations');
-    
-    try {
-      const migrations = await readdir(migrationsPath);
-      console.log(`📁 Found ${migrations.length} migration files`);
+    // Test database connection with proper error handling
+    if (db && typeof db.execute === 'function') {
+      const result = await db.execute('SELECT NOW()');
+      console.log('✅ Database connection successful');
       
-      if (migrations.length > 0) {
-        console.log('🚀 Running database migrations...');
-        await migrate(db, { migrationsFolder: migrationsPath });
-        console.log('✅ Database migrations completed successfully');
+      // Only run migrations if database connection is successful
+      const migrationsPath = join(process.cwd(), 'migrations');
+      
+      try {
+        const migrations = await readdir(migrationsPath);
+        console.log(`📁 Found ${migrations.length} migration files`);
+        
+        if (migrations.length > 0) {
+          console.log('🚀 Running database migrations...');
+          await migrate(db, { migrationsFolder: migrationsPath });
+          console.log('✅ Database migrations completed successfully');
+        }
+      } catch (error) {
+        console.log('⚠️  Migration skipped, database may need setup.');
       }
-    } catch (error) {
-      console.log('⚠️  Migration skipped, database may need setup.');
+    } else {
+      console.log('⚠️  Database not properly configured. Using fallback storage.');
     }
     
   } catch (error) {

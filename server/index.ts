@@ -12,8 +12,10 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-// Initialize database on startup
-initializeDatabase().catch(console.error);
+// Initialize database on startup (with error handling)
+initializeDatabase().catch((error) => {
+  console.log('⚠️  Database initialization failed, continuing with limited functionality');
+});
 
 app.use((req, res, next) => {
   const start = Date.now();

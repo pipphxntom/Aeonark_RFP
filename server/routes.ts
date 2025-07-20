@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { setupSimpleAuth, isAuthenticated as simpleIsAuthenticated, getCurrentUser } from "./simpleAuth";
 import { insertRfpSchema, insertSmartMatchSchema, insertProposalSchema } from "@shared/schema";
 import { generateProposal, analyzeRfpCompatibility, regenerateSection } from "./services/openai";
 import { processUploadedFile } from "./services/fileProcessor";
@@ -30,8 +31,14 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
-  await setupAuth(app);
+  // Try to setup full auth, fall back to simple auth if it fails
+  try {
+    await setupAuth(app);
+    console.log('✅ Full authentication system initialized');
+  } catch (error) {
+    console.log('⚠️  Full auth failed, using simple authentication');
+    await setupSimpleAuth(app);
+  }
 
   // OTP Authentication routes
   app.post('/api/auth/send-otp', async (req, res) => {
