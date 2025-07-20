@@ -29,6 +29,8 @@ import {
 import { AnimatedIcon } from "@/components/AnimatedIcon";
 import { ProposalEditor } from "@/components/ProposalEditor";
 import { EmailIntegration } from "@/components/EmailIntegration";
+import { IndustryAI } from "@/components/IndustryAI";
+import { MemoryBank } from "@/components/MemoryBank";
 
 export default function Home() {
   const { user } = useAuth();
@@ -37,7 +39,7 @@ export default function Home() {
   const [showAIGeneration, setShowAIGeneration] = useState(false);
   const [showEmailIntegration, setShowEmailIntegration] = useState(false);
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'editor'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'editor' | 'industry-ai' | 'memory-bank'>('dashboard');
   const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null);
 
   const { data: rfps = [] } = useQuery({
@@ -92,6 +94,18 @@ export default function Home() {
       onClick: () => setShowSmartMatch(true) 
     },
     { 
+      icon: Brain, 
+      label: "Industry AI", 
+      active: currentView === 'industry-ai',
+      onClick: () => setCurrentView('industry-ai') 
+    },
+    { 
+      icon: Database, 
+      label: "Memory Bank", 
+      active: currentView === 'memory-bank',
+      onClick: () => setCurrentView('memory-bank') 
+    },
+    { 
       icon: Mail, 
       label: "Integrations", 
       onClick: () => setShowEmailIntegration(true) 
@@ -99,10 +113,6 @@ export default function Home() {
     { 
       icon: FileText, 
       label: "Drafts" 
-    },
-    { 
-      icon: Database, 
-      label: "Memory Bank" 
     },
     { 
       icon: Settings, 
@@ -172,6 +182,10 @@ export default function Home() {
               proposalId={selectedProposalId} 
               onClose={handleCloseEditor} 
             />
+          ) : currentView === 'industry-ai' ? (
+            <IndustryAI onClose={() => setCurrentView('dashboard')} />
+          ) : currentView === 'memory-bank' ? (
+            <MemoryBank onClose={() => setCurrentView('dashboard')} />
           ) : (
             <div className="p-8">
           {/* Hero Card */}
@@ -227,7 +241,10 @@ export default function Home() {
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Card className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer">
+                  <Card 
+                    className="glass-morphism hover:neon-border transition-all duration-300 cursor-pointer"
+                    onClick={() => setCurrentView('memory-bank')}
+                  >
                     <CardContent className="p-6 text-center">
                       <AnimatedIcon type="database" size={32} className="h-8 w-8 text-yellow-400 mx-auto mb-3" />
                       <h3 className="font-bold mb-2">Memory Bank</h3>

@@ -1060,7 +1060,187 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // SmartMatch Industry AI API Routes
+  // Industry AI endpoints (standalone page)
+  app.get('/api/industry-ai/models', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      // Return mock industry models data
+      const models = [
+        {
+          id: 1,
+          industry: 'technology',
+          version: '2.1',
+          status: 'active',
+          accuracy: 0.942,
+          precision: 0.891,
+          dataPoints: 247,
+          lastTrained: new Date('2025-07-15'),
+        },
+        {
+          id: 2,
+          industry: 'healthcare',
+          version: '1.8',
+          status: 'active',
+          accuracy: 0.887,
+          precision: 0.834,
+          dataPoints: 189,
+          lastTrained: new Date('2025-07-12'),
+        },
+        {
+          id: 3,
+          industry: 'finance',
+          version: '1.5',
+          status: 'training',
+          accuracy: 0.823,
+          precision: 0.791,
+          dataPoints: 156,
+          lastTrained: new Date('2025-07-08'),
+        }
+      ];
+
+      res.json(models);
+    } catch (error) {
+      console.error('Error fetching industry models:', error);
+      res.status(500).json({ message: 'Failed to fetch industry models' });
+    }
+  });
+
+  app.get('/api/industry-ai/training-logs', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      // Return mock training logs
+      const logs = [
+        {
+          id: 1,
+          industry: 'technology',
+          trainingType: 'incremental',
+          status: 'completed',
+          dataPointsUsed: 45,
+          trainingDuration: 1820, // seconds
+          improvements: {
+            accuracyImprovement: 0.047,
+            dataPointsAdded: 45
+          },
+          afterMetrics: {
+            accuracy: 0.942
+          },
+          createdAt: new Date('2025-07-15T14:30:00Z'),
+        },
+        {
+          id: 2,
+          industry: 'healthcare',
+          trainingType: 'full-retrain',
+          status: 'running',
+          dataPointsUsed: 189,
+          trainingDuration: 0,
+          improvements: null,
+          afterMetrics: null,
+          createdAt: new Date('2025-07-20T20:15:00Z'),
+        }
+      ];
+
+      res.json(logs);
+    } catch (error) {
+      console.error('Error fetching training logs:', error);
+      res.status(500).json({ message: 'Failed to fetch training logs' });
+    }
+  });
+
+  app.get('/api/industry-ai/memory-banks', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      // Return mock memory bank data based on winning proposals
+      const memoryBanks = [
+        {
+          id: 1,
+          industry: 'technology',
+          outcome: 'won',
+          projectValue: '150000',
+          timelineWeeks: 12,
+          winProbability: '0.87',
+          clientSize: 'enterprise',
+          competitorCount: 4,
+          keyPhrases: ['cloud migration', 'scalability', 'security', 'DevOps'],
+          requiredCertifications: ['AWS Certified', 'SOC 2', 'ISO 27001'],
+          createdAt: new Date('2025-07-01'),
+        },
+        {
+          id: 2,
+          industry: 'healthcare',
+          outcome: 'won',
+          projectValue: '75000',
+          timelineWeeks: 8,
+          winProbability: '0.92',
+          clientSize: 'mid-market',
+          competitorCount: 3,
+          keyPhrases: ['HIPAA compliance', 'EHR integration', 'data analytics'],
+          requiredCertifications: ['HIPAA', 'HL7 FHIR'],
+          createdAt: new Date('2025-06-15'),
+        },
+        {
+          id: 3,
+          industry: 'finance',
+          outcome: 'lost',
+          projectValue: '200000',
+          timelineWeeks: 16,
+          winProbability: '0.65',
+          clientSize: 'enterprise',
+          competitorCount: 6,
+          keyPhrases: ['regulatory compliance', 'risk management', 'audit trail'],
+          requiredCertifications: ['SOX', 'PCI DSS', 'GDPR'],
+          createdAt: new Date('2025-05-30'),
+        }
+      ];
+
+      res.json(memoryBanks);
+    } catch (error) {
+      console.error('Error fetching memory banks:', error);
+      res.status(500).json({ message: 'Failed to fetch memory banks' });
+    }
+  });
+
+  app.post('/api/industry-ai/train', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub || req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ message: 'User not authenticated' });
+      }
+
+      const { industry, modelType, comments } = req.body;
+      
+      const trainingLog = {
+        id: Date.now(),
+        industry,
+        trainingType: modelType,
+        status: 'running',
+        dataPointsUsed: Math.floor(Math.random() * 100) + 20,
+        trainingDuration: 0,
+        improvements: null,
+        afterMetrics: null,
+        createdAt: new Date(),
+        comments
+      };
+
+      res.json(trainingLog);
+    } catch (error) {
+      console.error('Error starting training:', error);
+      res.status(500).json({ message: 'Failed to start training' });
+    }
+  });
+
+  // SmartMatch Industry AI API Routes (for compatibility)
   app.get('/api/smartmatch/industry-models', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
