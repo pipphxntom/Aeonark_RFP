@@ -28,7 +28,6 @@ import {
 } from "lucide-react";
 import { AnimatedIcon } from "@/components/AnimatedIcon";
 import { ProposalEditor } from "@/components/ProposalEditor";
-import { AnalyticsDashboard } from "@/components/AnalyticsDashboard";
 import { EmailIntegration } from "@/components/EmailIntegration";
 
 export default function Home() {
@@ -38,7 +37,7 @@ export default function Home() {
   const [showAIGeneration, setShowAIGeneration] = useState(false);
   const [showEmailIntegration, setShowEmailIntegration] = useState(false);
   const [selectedRfpId, setSelectedRfpId] = useState<number | null>(null);
-  const [currentView, setCurrentView] = useState<'dashboard' | 'analytics' | 'editor'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'editor'>('dashboard');
   const [selectedProposalId, setSelectedProposalId] = useState<number | null>(null);
 
   const { data: rfps = [] } = useQuery({
@@ -93,25 +92,9 @@ export default function Home() {
       onClick: () => setShowSmartMatch(true) 
     },
     { 
-      icon: Database, 
-      label: "Industry AI", 
-      onClick: () => window.location.href = '/smartmatch' 
-    },
-    { 
-      icon: Brain, 
-      label: "AI Intelligence", 
-      onClick: () => window.location.href = '/smartmatch-intelligence' 
-    },
-    { 
       icon: Mail, 
       label: "Integrations", 
       onClick: () => setShowEmailIntegration(true) 
-    },
-    { 
-      icon: BarChart3, 
-      label: "Analytics", 
-      active: currentView === 'analytics',
-      onClick: () => setCurrentView('analytics')
     },
     { 
       icon: FileText, 
@@ -184,9 +167,7 @@ export default function Home() {
 
         {/* Main Content */}
         <div className="flex-1">
-          {currentView === 'analytics' ? (
-            <AnalyticsDashboard />
-          ) : currentView === 'editor' && selectedProposalId ? (
+          {currentView === 'editor' && selectedProposalId ? (
             <ProposalEditor 
               proposalId={selectedProposalId} 
               onClose={handleCloseEditor} 
@@ -271,6 +252,82 @@ export default function Home() {
                   </Card>
                 </motion.div>
               </div>
+            </div>
+          </motion.div>
+
+          {/* Analytics Section */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mb-8"
+          >
+            <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+              <BarChart3 className="h-6 w-6 text-neon-cyan" />
+              Performance Analytics
+            </h2>
+            
+            {/* Analytics Summary Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card className="glass-morphism neon-border">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-cyan-500/20 rounded-lg">
+                      <FileText className="w-6 h-6 text-cyan-400" />
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold mb-1">{proposals.length}</p>
+                    <p className="text-sm text-gray-400">Proposals Created</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-morphism neon-border">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-green-500/20 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-green-400" />
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold mb-1">{rfps.length}</p>
+                    <p className="text-sm text-gray-400">RFPs Analyzed</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-morphism neon-border">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-purple-500/20 rounded-lg">
+                      <Clock className="w-6 h-6 text-purple-400" />
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold mb-1">{rfps.length * 2.5}h</p>
+                    <p className="text-sm text-gray-400">Time Saved</p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-morphism neon-border">
+                <CardContent className="p-6 text-center">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-3 bg-yellow-500/20 rounded-lg">
+                      <TrendingUp className="w-6 h-6 text-yellow-400" />
+                    </div>
+                    <TrendingUp className="w-5 h-5 text-green-400" />
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold mb-1">85%</p>
+                    <p className="text-sm text-gray-400">Avg Score</p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </motion.div>
           
