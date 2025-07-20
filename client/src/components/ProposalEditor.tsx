@@ -108,11 +108,7 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
   // Update proposal mutation
   const updateProposalMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest(`/api/proposals/${proposalId}`, {
-        method: "PATCH",
-        body: JSON.stringify(data),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("PATCH", `/api/proposals/${proposalId}`, data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/proposals", proposalId] });
@@ -126,11 +122,7 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
   // Regenerate section mutation
   const regenerateMutation = useMutation({
     mutationFn: async ({ sectionType }: { sectionType: string }) => {
-      return apiRequest(`/api/proposals/${proposalId}/regenerate`, {
-        method: "POST",
-        body: JSON.stringify({ sectionType }),
-        headers: { "Content-Type": "application/json" },
-      });
+      return apiRequest("POST", `/api/proposals/${proposalId}/regenerate`, { sectionType });
     },
     onSuccess: () => {
       setRegeneratingSection(null);
@@ -145,9 +137,7 @@ export function ProposalEditor({ proposalId, onClose }: ProposalEditorProps) {
   // Share proposal mutation
   const shareMutation = useMutation({
     mutationFn: async () => {
-      return apiRequest(`/api/proposals/${proposalId}/share`, {
-        method: "POST",
-      });
+      return apiRequest("POST", `/api/proposals/${proposalId}/share`);
     },
     onSuccess: (data: any) => {
       navigator.clipboard.writeText(data.shareUrl);
