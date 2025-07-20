@@ -28,7 +28,7 @@ cp .env.example .env
 
 Edit `.env` with your actual values:
 - **DATABASE_URL**: PostgreSQL connection string
-- **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/api-keys)
+- **GEMINI_API_KEY**: Get from [Google.Gemini](https://platform.openai.com/api-keys)
 - **RESEND_API_KEY**: Get from [Resend](https://resend.com/api-keys)
 - **SESSION_SECRET**: Generate a secure random string
 
@@ -47,7 +47,7 @@ Visit `http://localhost:5000` to access the application.
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `DATABASE_URL` | PostgreSQL connection string | ✅ |
-| `OPENAI_API_KEY` | OpenAI API key for AI features | ✅ |
+| `GEMINI_API_KEY` | Gemini API key for AI features | ✅ |
 | `RESEND_API_KEY` | Resend API key for email service | ✅ |
 | `SESSION_SECRET` | Secret key for session encryption | ✅ |
 | `ISSUER_URL` | OAuth issuer URL (production) | ❌ |
@@ -82,7 +82,7 @@ For issues or questions, please check the console logs and ensure all environmen
 2. Set up your environment variables in the Secrets tab:
    - `DATABASE_URL` - Your PostgreSQL connection string
    - `RESEND_API_KEY` - Your Resend API key for emails
-   - `OPENAI_API_KEY` - Your OpenAI API key
+   - `GEMINI_API_KEY` - Your OpenAI API key
    - `SESSION_SECRET` - A random secret for sessions
 3. Run `npm run db:setup` to initialize the database
 4. Run the project
