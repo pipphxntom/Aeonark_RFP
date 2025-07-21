@@ -134,6 +134,7 @@ Changelog:
 - July 20, 2025. INDUSTRY AI PAGE RESTORATION: Restored dedicated Industry AI page with comprehensive machine learning models dashboard, training logs, memory banks, and performance analytics. Fixed Memory Bank button functionality to display past proposals used for AI training. Added separate navigation for both Industry AI and Memory Bank views.
 - July 20, 2025. MIGRATION COMPLETED: Successfully migrated from Replit Agent to standard Replit environment. Fixed BarChart3 import issue in MemoryBank component, resolved TypeScript interface errors, verified all core application functionality working correctly with graceful fallbacks for external services.
 - July 21, 2025. SUPABASE INTEGRATION: Successfully replaced PostgreSQL connection with Supabase via Drizzle ORM. Updated database connection configuration, added missing storage interface methods (getAllUsers, getEmailIngestionLogs), fixed email ingestion service errors. Application now connects to Supabase with proper fallback handling.
+- July 21, 2025. OAUTH CRITICAL FIX: Resolved Google OAuth "invalid_client" error by identifying wrong Client ID format. Fixed OAuth callback URL construction issue causing 404 errors. Enhanced OAuth service with proper Client ID validation and comprehensive debugging tools.
 ```
 
 ## Recent Changes

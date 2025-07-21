@@ -797,11 +797,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const providerName = provider === 'google' ? 'gmail' : provider;
       const token = await oauthProviders[providerName as keyof typeof oauthProviders].exchangeCodeForTokens(code as string, state as string);
       
-      // Redirect to frontend with success
-      res.redirect(`${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/?connected=${provider}`);
+      // Redirect to frontend with success  
+      const baseUrl = process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS}` : 'http://localhost:5000';
+      res.redirect(`${baseUrl}/?connected=${provider}`);
     } catch (error) {
       console.error("OAuth callback error:", error);
-      res.redirect(`${process.env.REPLIT_DOMAINS || 'http://localhost:5000'}/?error=oauth_failed`);
+      const baseUrl = process.env.REPLIT_DOMAINS ? `https://${process.env.REPLIT_DOMAINS}` : 'http://localhost:5000';
+      res.redirect(`${baseUrl}/?error=oauth_failed`);
     }
   });
 
