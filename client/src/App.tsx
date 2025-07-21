@@ -4,6 +4,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useAuth } from "@/hooks/useAuth";
+import { usePageLoader } from "@/hooks/usePageLoader";
+import LoadingScreen from "@/components/LoadingScreen";
 import Landing from "@/pages/Landing";
 import Auth from "@/pages/Auth";
 import Home from "@/pages/Home";
@@ -13,14 +15,16 @@ import SmartMatchIntelligence from "@/pages/SmartMatchIntelligence";
 import NotFound from "@/pages/not-found";
 
 function Router() {
-  const { isAuthenticated, isLoading, user } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, user } = useAuth();
+  const { isLoading: pageLoading, isReady } = usePageLoader({ 
+    minLoadTime: 2000, 
+    dependencies: [isAuthenticated] 
+  });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-deep-black flex items-center justify-center">
-        <div className="animate-spin w-8 h-8 border-2 border-neon-green border-t-transparent rounded-full"></div>
-      </div>
-    );
+  const showLoadingScreen = authLoading || pageLoading;
+
+  if (showLoadingScreen) {
+    return <LoadingScreen isLoading={showLoadingScreen} />;
   }
 
   return (
