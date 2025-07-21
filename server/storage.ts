@@ -86,6 +86,7 @@ export interface IStorage {
   // OAuth operations
   upsertOauthToken(token: InsertOauthToken): Promise<OauthToken>;
   getOauthToken(userId: string, provider: string): Promise<OauthToken | undefined>;
+  getOAuthTokens(userId: string, provider: string): Promise<OauthToken | undefined>;
   refreshOauthToken(userId: string, provider: string, newTokens: Partial<InsertOauthToken>): Promise<OauthToken>;
   deleteOauthToken(userId: string, provider: string): Promise<void>;
   
@@ -421,6 +422,10 @@ export class DatabaseStorage implements IStorage {
       .limit(1);
     
     return token;
+  }
+
+  async getOAuthTokens(userId: string, provider: string): Promise<OauthToken | undefined> {
+    return this.getOauthToken(userId, provider);
   }
 
   async refreshOauthToken(userId: string, provider: string, newTokens: Partial<InsertOauthToken>): Promise<OauthToken> {
@@ -848,6 +853,7 @@ class MemoryStorage implements IStorage {
   }
   async upsertOauthToken(): Promise<OauthToken> { return {} as OauthToken; }
   async getOauthToken(): Promise<OauthToken | undefined> { return undefined; }
+  async getOAuthTokens(): Promise<OauthToken | undefined> { return undefined; }
   async refreshOauthToken(): Promise<OauthToken> { return {} as OauthToken; }
   async deleteOauthToken(): Promise<void> {}
   async createEmailMonitoring(): Promise<EmailMonitoring> { return {} as EmailMonitoring; }

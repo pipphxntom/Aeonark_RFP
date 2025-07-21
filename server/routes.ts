@@ -850,6 +850,88 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Gmail Integration Routes
+  app.get('/api/gmail/emails', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { gmailService } = await import('./services/gmailService');
+      
+      const emails = await gmailService.fetchEmailsWithAttachments(userId, 20);
+      const emailSummaries = [];
+      
+      for (const email of emails) {
+        const summary = await gmailService.generateEmailSummary(email);
+        emailSummaries.push(summary);
+      }
+      
+      // Sort by RFP probability and recency
+      emailSummaries.sort((a, b) => {
+        if (a.isRfp !== b.isRfp) return b.isRfp ? 1 : -1;
+        return b.confidence - a.confidence;
+      });
+      
+      res.json({ emails: emailSummaries });
+    } catch (error) {
+      console.error("Error fetching Gmail emails:", error);
+      res.status(500).json({ message: "Failed to fetch emails from Gmail" });
+    }
+  });
+
+  app.post('/api/gmail/emails/:messageId/summary', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { messageId } = req.params;
+      const { gmailService } = await import('./services/gmailService');
+      
+      const emails = await gmailService.fetchEmailsWithAttachments(userId, 50);
+      const email = emails.find(e => e.id === messageId);
+      
+      if (!email) {
+        return res.status(404).json({ message: "Email not found" });
+      }
+      
+      const summary = await gmailService.generateEmailSummary(email);
+      res.json(summary);
+    } catch (error) {
+      console.error("Error generating email summary:", error);
+      res.status(500).json({ message: "Failed to generate email summary" });
+    }
+  });
+
+  app.post('/api/gmail/emails/:messageId/create-rfp', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { messageId } = req.params;
+      const { gmailService } = await import('./services/gmailService');
+      
+      const rfp = await gmailService.createRfpFromEmail(userId, messageId);
+      res.json(rfp);
+    } catch (error) {
+      console.error("Error creating RFP from email:", error);
+      res.status(500).json({ message: "Failed to create RFP from email" });
+    }
+  });
+
+  app.get('/api/gmail/emails/:messageId/attachments', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { messageId } = req.params;
+      const { gmailService } = await import('./services/gmailService');
+      
+      const emails = await gmailService.fetchEmailsWithAttachments(userId, 50);
+      const email = emails.find(e => e.id === messageId);
+      
+      if (!email) {
+        return res.status(404).json({ message: "Email not found" });
+      }
+      
+      res.json({ attachments: email.attachments });
+    } catch (error) {
+      console.error("Error fetching email attachments:", error);
+      res.status(500).json({ message: "Failed to fetch email attachments" });
+    }
+  });
+
   // SmartMatch API Routes
   app.post('/api/smartmatch', isAuthenticated, upload.single('file'), async (req: any, res) => {
     try {

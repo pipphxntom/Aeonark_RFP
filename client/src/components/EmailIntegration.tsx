@@ -160,18 +160,80 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
     disconnectMutation.mutate(platform);
   };
 
+  // Gmail email fetching
   const fetchEmails = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('GET', '/api/integrations/emails/scan');
+      const response = await apiRequest('GET', '/api/gmail/emails');
       return response.json();
     },
     onSuccess: (data) => {
       setEmailSummaries(data.emails || []);
       toast({
-        title: "Emails Scanned",
-        description: `Found ${data.emails?.length || 0} potential RFP emails.`,
+        title: "Gmail Emails Loaded",
+        description: `Found ${data.emails?.length || 0} emails with attachments.`,
       });
     },
+    onError: (error) => {
+      console.error("Error fetching Gmail emails:", error);
+      toast({
+        title: "Gmail Fetch Failed",
+        description: "Unable to load emails from Gmail. Please check your connection.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Generate email summary
+  const generateSummary = useMutation({
+    mutationFn: async (messageId: string) => {
+      const response = await apiRequest("POST", `/api/gmail/emails/${messageId}/summary`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      // Update the specific email in the list
+      setEmailSummaries(prev => 
+        prev.map(email => 
+          email.id === data.id 
+            ? { ...email, summary: data.summary, isRfp: data.isRfp, confidence: data.confidence }
+            : email
+        )
+      );
+      toast({
+        title: "Summary Generated",
+        description: "Email summary updated with AI analysis.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error generating summary:", error);
+      toast({
+        title: "Summary Failed",
+        description: "Unable to generate email summary.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Create RFP from email
+  const createRfpFromEmail = useMutation({
+    mutationFn: async (messageId: string) => {
+      const response = await apiRequest("POST", `/api/gmail/emails/${messageId}/create-rfp`);
+      return response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/rfps"] });
+      toast({
+        title: "RFP Created",
+        description: "Successfully created RFP from email attachments.",
+      });
+    },
+    onError: (error) => {
+      console.error("Error creating RFP:", error);
+      toast({
+        title: "RFP Creation Failed",
+        description: "Unable to create RFP from email. Check if valid documents are attached.",
+        variant: "destructive"
+      });
+    }
   });
 
   const integrationCards = [
@@ -363,18 +425,18 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
             })}
           </div>
 
-          {/* Email Monitoring Section */}
-          {(integrations?.gmail?.connected || integrations?.slack?.connected) && (
+          {/* Gmail Email Display Section */}
+          {integrations?.gmail?.connected && (
             <Card className="bg-gray-900/50 border-gray-800">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="text-white flex items-center gap-2">
-                      <Mail className="h-5 w-5 text-[#00FFA3]" />
-                      Recent Activity
+                      <SiGmail className="h-5 w-5 text-[#00FFA3]" />
+                      Gmail Inbox - Emails with Attachments
                     </CardTitle>
                     <CardDescription>
-                      Latest emails and messages scanned for RFP content
+                      Recent emails from your Gmail inbox containing attachments
                     </CardDescription>
                   </div>
                   <Button 
@@ -389,45 +451,123 @@ export function EmailIntegration({ onClose }: EmailIntegrationProps) {
                     ) : (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        Scan Now
+                        Load Emails
                       </>
                     )}
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {emailSummaries.length > 0 ? (
-                  <div className="space-y-3">
+                {fetchEmails.isPending ? (
+                  <div className="text-center py-8">
+                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4 text-[#00FFA3]" />
+                    <p className="text-gray-400">Loading emails from Gmail...</p>
+                  </div>
+                ) : emailSummaries.length > 0 ? (
+                  <div className="space-y-4">
                     {emailSummaries.map((email) => (
-                      <div key={email.id} className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="font-medium text-white text-sm">{email.subject}</h4>
-                            {email.isRfp && (
-                              <Badge className="bg-[#00FFA3]/20 text-[#00FFA3] border-[#00FFA3]/30 text-xs">
-                                RFP Detected
+                      <motion.div 
+                        key={email.id} 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-4 bg-gray-800/50 border border-gray-700/50 rounded-lg hover:border-gray-600/50 transition-all"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h4 className="font-semibold text-white text-sm truncate">{email.subject}</h4>
+                              {email.isRfp && (
+                                <Badge className="bg-[#00FFA3]/20 text-[#00FFA3] border-[#00FFA3]/30 text-xs">
+                                  RFP Detected ({Math.round(email.confidence * 100)}%)
+                                </Badge>
+                              )}
+                              <Badge variant="outline" className="text-xs border-gray-600 text-gray-400">
+                                {email.attachmentCount} attachment{email.attachmentCount !== 1 ? 's' : ''}
                               </Badge>
+                            </div>
+                            <div className="space-y-1 mb-3">
+                              <p className="text-xs text-gray-400">
+                                <strong>From:</strong> {email.sender} ({email.senderEmail})
+                              </p>
+                              <p className="text-xs text-gray-400">
+                                <strong>Time:</strong> {email.timestamp}
+                              </p>
+                              {email.attachments.length > 0 && (
+                                <p className="text-xs text-gray-300">
+                                  <strong>Attachments:</strong> {email.attachments.join(', ')}
+                                </p>
+                              )}
+                            </div>
+                            <div className="bg-gray-900/50 p-3 rounded border border-gray-700/30">
+                              <p className="text-sm text-gray-300 leading-relaxed">
+                                {email.summary || email.snippet}
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-end gap-2 mt-4 pt-3 border-t border-gray-700/50">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => generateSummary.mutate(email.id)}
+                            disabled={generateSummary.isPending}
+                            className="border-blue-500/30 text-blue-400 hover:bg-blue-500/10"
+                          >
+                            {generateSummary.isPending ? (
+                              <RefreshCw className="h-3 w-3 animate-spin mr-2" />
+                            ) : (
+                              <MessageSquare className="h-3 w-3 mr-2" />
                             )}
-                          </div>
-                          <p className="text-xs text-gray-400">From: {email.sender}</p>
-                          <p className="text-xs text-gray-300 mt-1">{email.summary}</p>
+                            Update Summary
+                          </Button>
+                          
+                          {email.attachmentCount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => createRfpFromEmail.mutate(email.id)}
+                              disabled={createRfpFromEmail.isPending}
+                              className="border-[#00FFA3]/30 text-[#00FFA3] hover:bg-[#00FFA3]/10"
+                            >
+                              {createRfpFromEmail.isPending ? (
+                                <RefreshCw className="h-3 w-3 animate-spin mr-2" />
+                              ) : (
+                                <Zap className="h-3 w-3 mr-2" />
+                              )}
+                              Load for SmartMatch
+                            </Button>
+                          )}
                         </div>
-                        <div className="text-right">
-                          <div className="text-xs text-gray-400">{email.timestamp}</div>
-                          <div className="text-xs text-[#00FFA3] mt-1">
-                            {email.confidence}% confidence
-                          </div>
-                        </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 ) : (
                   <div className="text-center py-8 text-gray-400">
                     <Mail className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No recent activity to display</p>
-                    <p className="text-sm">Connect your platforms and scan for RFPs</p>
+                    <p className="font-medium">No emails with attachments found</p>
+                    <p className="text-sm">Click "Load Emails" to fetch recent messages from your Gmail inbox</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Auto-capture Status */}
+          {integrations?.gmail?.connected && autoCapture && (
+            <Card className="bg-gradient-to-r from-[#00FFA3]/10 to-[#00D4FF]/10 border-[#00FFA3]/20">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-3">
+                  <div className="animate-pulse">
+                    <div className="w-3 h-3 bg-[#00FFA3] rounded-full"></div>
+                  </div>
+                  <div>
+                    <p className="text-[#00FFA3] font-medium">Auto-Capture Active</p>
+                    <p className="text-sm text-gray-300">
+                      Automatically scanning Gmail for new RFPs every 15 minutes
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
