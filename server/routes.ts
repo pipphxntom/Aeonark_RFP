@@ -747,6 +747,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // OAuth Integration Routes
+  // Debug endpoint to show exact OAuth URLs being generated
+  app.get("/api/debug/oauth-config", (req, res) => {
+    // Same logic as in oauthService.ts
+    let redirectUri = 'http://localhost:5000/api/auth/google/callback';
+    
+    if (process.env.REPLIT_DOMAINS) {
+      redirectUri = `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`;
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      redirectUri = `https://${process.env.REPL_SLUG}--5000--${process.env.REPL_OWNER}.replit.app/api/auth/google/callback`;
+    }
+
+    res.json({
+      message: "📋 COPY THIS EXACT URI TO GOOGLE CLOUD CONSOLE",
+      redirectUri,
+      instructions: [
+        "1. Go to https://console.cloud.google.com/",
+        "2. Navigate to APIs & Services → Credentials", 
+        "3. Edit your OAuth 2.0 Client ID",
+        "4. Add the redirectUri above to 'Authorized redirect URIs'",
+        "5. Save and wait 2 minutes for propagation"
+      ],
+      environment: {
+        REPLIT_DOMAINS: process.env.REPLIT_DOMAINS,
+        REPL_SLUG: process.env.REPL_SLUG,
+        REPL_OWNER: process.env.REPL_OWNER
+      }
+    });
+  });
+
   app.post("/api/oauth/connect", isAuthenticated, async (req, res) => {
     try {
       const { provider } = req.body;
