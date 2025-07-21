@@ -14,15 +14,17 @@ let db: any = null;
 
 if (process.env.DATABASE_URL) {
   try {
-    // Configure for Supabase connection
+    // Configure for PostgreSQL connection (Replit-managed or Supabase)
     pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: process.env.DATABASE_URL.includes('supabase.co') ? { rejectUnauthorized: false } : false
+      ssl: process.env.DATABASE_URL.includes('supabase.co') || process.env.DATABASE_URL.includes('neon.tech') 
+        ? { rejectUnauthorized: false } 
+        : false
     });
     db = drizzle(pool, { schema });
-    console.log('🔌 Connected to Supabase database via Drizzle ORM');
+    console.log('🔌 Connected to PostgreSQL database via Drizzle ORM');
   } catch (error) {
-    console.error('⚠️  Failed to create Supabase connection:', error);
+    console.error('⚠️  Failed to create PostgreSQL connection:', error);
     pool = null;
     db = null;
   }
