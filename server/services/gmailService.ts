@@ -45,10 +45,19 @@ export class GmailService {
   private classifier: DocumentClassifier;
 
   constructor() {
+    // Use same redirect URI logic as oauthService
+    let redirectUri = 'http://localhost:5000/api/auth/google/callback';
+    
+    if (process.env.REPLIT_DOMAINS) {
+      redirectUri = `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`;
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      redirectUri = `https://${process.env.REPL_SLUG}--5000--${process.env.REPL_OWNER}.replit.app/api/auth/google/callback`;
+    }
+
     this.oauth2Client = new OAuth2Client(
-      process.env.GMAIL_CLIENT_ID,
-      process.env.GMAIL_CLIENT_SECRET,
-      process.env.GMAIL_REDIRECT_URI || 'http://localhost:5000/api/auth/google/callback'
+      process.env.GOOGLE_CLIENT_ID,
+      process.env.GOOGLE_CLIENT_SECRET,
+      redirectUri
     );
     this.classifier = new DocumentClassifier();
   }

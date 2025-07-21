@@ -30,9 +30,8 @@ class GoogleOAuthProvider implements OAuthProvider {
     let redirectUri = 'http://localhost:5000/api/auth/google/callback';
     
     if (process.env.REPLIT_DOMAINS) {
-      // For published Replit apps, use the domain from REPLIT_DOMAINS
-      const domain = process.env.REPLIT_DOMAINS.replace(/^https?:\/\//, '');
-      redirectUri = `https://${domain}/api/auth/google/callback`;
+      // For published Replit apps, use the domain from REPLIT_DOMAINS and add protocol
+      redirectUri = `https://${process.env.REPLIT_DOMAINS}/api/auth/google/callback`;
     } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
       // For development in Replit, construct the webview URL
       redirectUri = `https://${process.env.REPL_SLUG}--5000--${process.env.REPL_OWNER}.replit.app/api/auth/google/callback`;
