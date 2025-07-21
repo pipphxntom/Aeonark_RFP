@@ -185,6 +185,7 @@ export function AnimatedIcon({ type, size = 32, className = "" }: AnimatedIconPr
       variants={iconVariants[type]}
       initial="initial"
       whileHover="hover"
+      style={{ transformOrigin: 'center' }}
     >
       <IconComponent size={size} />
     </motion.div>

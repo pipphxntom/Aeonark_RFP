@@ -149,7 +149,7 @@ export default function Landing() {
               <Button 
                 size="lg" 
                 onClick={() => window.location.href = '/auth'}
-                className="font-normal bg-[#3b3838] from-[#00FFC6] to-[#00C0FF] text-white px-7 py-3 text-base rounded-xl hover:shadow-[0_0_20px_rgba(0,255,198,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105"
+                className="inline-flex items-center justify-center gap-2 whitespace-nowrap ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 hover:bg-primary/90 h-11 from-[#00FFC6] to-[#00C0FF] text-white px-7 py-3 text-base rounded-xl hover:shadow-[0_0_20px_rgba(0,255,198,0.3)] transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-105 font-normal bg-[#3b3838]"
                 style={{ 
                   textShadow: '0 1px 2px rgba(0,0,0,0.5)',
                   fontSize: '16px'
