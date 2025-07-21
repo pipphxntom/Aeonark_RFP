@@ -15,15 +15,8 @@ import { z } from "zod";
 import { relations } from "drizzle-orm";
 
 // Session storage table (required for Replit Auth)
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
+// Sessions table managed by connect-pg-simple middleware
+// Removed to prevent constraint conflicts with session store
 
 // User storage table (required for Replit Auth)
 export const users = pgTable("users", {

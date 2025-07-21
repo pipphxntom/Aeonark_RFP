@@ -49,7 +49,8 @@ export function getSession() {
       conString: process.env.DATABASE_URL,
       createTableIfMissing: true,
       ttl: sessionTtl,
-      tableName: "sessions",
+      tableName: "user_sessions", // Use different table name to avoid conflicts
+      schemaName: "public"
     });
   } else {
     console.log('🔐 Using in-memory session store (sessions will not persist)');

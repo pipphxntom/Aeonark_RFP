@@ -136,6 +136,7 @@ Changelog:
 - July 21, 2025. SUPABASE INTEGRATION: Successfully replaced PostgreSQL connection with Supabase via Drizzle ORM. Updated database connection configuration, added missing storage interface methods (getAllUsers, getEmailIngestionLogs), fixed email ingestion service errors. Application now connects to Supabase with proper fallback handling.
 - July 21, 2025. OAUTH CRITICAL FIX: Resolved Google OAuth "invalid_client" error by identifying wrong Client ID format. Fixed OAuth callback URL construction issue causing 404 errors. Enhanced OAuth service with proper Client ID validation and comprehensive debugging tools.
 - July 21, 2025. DATABASE CONNECTION RESTORED: Fixed PostgreSQL endpoint access error by creating new Replit-managed database. Successfully established database connection with all 23 tables created and operational. Resolved session store conflicts and migrations completed successfully.
+- July 21, 2025. SESSION STORE CONSTRAINT FIX: Permanently resolved "duplicate key value violates unique constraint pg_type_typname_nsp_index" error by removing conflicting sessions table from Drizzle schema and reconfiguring connect-pg-simple to use separate user_sessions table. Application now runs without constraint violations.
 ```
 
 ## Recent Changes
