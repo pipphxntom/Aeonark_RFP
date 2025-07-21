@@ -39,6 +39,17 @@ class GoogleOAuthProvider implements OAuthProvider {
     }
     
     console.log(`🔧 Google OAuth redirect URI: ${redirectUri}`);
+    console.log(`🔧 Google Client ID: ${GOOGLE_CLIENT_ID?.substring(0, 12)}...`);
+    
+    // Validate Client ID format
+    if (hasRealCredentials && GOOGLE_CLIENT_ID) {
+      if (!GOOGLE_CLIENT_ID.endsWith('.apps.googleusercontent.com')) {
+        console.error('❌ INVALID Google Client ID format! Must end with .apps.googleusercontent.com');
+        console.error(`   Current: ${GOOGLE_CLIENT_ID.substring(0, 20)}...`);
+        this.isConfigured = false;
+        return;
+      }
+    }
     
     this.oauth2Client = new google.auth.OAuth2(
       GOOGLE_CLIENT_ID,
@@ -49,8 +60,10 @@ class GoogleOAuthProvider implements OAuthProvider {
     if (hasRealCredentials) {
       this.isConfigured = true;
       console.log('Gmail OAuth integration enabled with real credentials');
-      console.log('⚠️  Ensure this redirect URI is configured in Google Cloud Console:');
+      console.log('⚠️  CRITICAL: Add this EXACT redirect URI to Google Cloud Console:');
       console.log(`   ${redirectUri}`);
+      console.log('⚠️  CRITICAL: Verify Client ID in Google Cloud Console matches:');
+      console.log(`   ${GOOGLE_CLIENT_ID?.substring(0, 12)}...`);
     } else {
       this.isConfigured = false;
       console.log('Gmail OAuth integration disabled - using development defaults. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for production use.');
