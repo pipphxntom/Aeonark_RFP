@@ -26,15 +26,19 @@ class GoogleOAuthProvider implements OAuthProvider {
   constructor() {
     const hasRealCredentials = process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET;
     
-    // Use proper redirect URI format for OAuth 2.0 compliance
-    // Ensure HTTPS for published apps and handle multiple domains
+    // Determine correct redirect URI based on environment
     let redirectUri = 'http://localhost:5000/api/auth/google/callback';
     
     if (process.env.REPLIT_DOMAINS) {
-      // Handle published Replit app domains (always HTTPS)
+      // For published Replit apps, use the domain from REPLIT_DOMAINS
       const domain = process.env.REPLIT_DOMAINS.replace(/^https?:\/\//, '');
       redirectUri = `https://${domain}/api/auth/google/callback`;
+    } else if (process.env.REPL_SLUG && process.env.REPL_OWNER) {
+      // For development in Replit, construct the webview URL
+      redirectUri = `https://${process.env.REPL_SLUG}--5000--${process.env.REPL_OWNER}.replit.app/api/auth/google/callback`;
     }
+    
+    console.log(`🔧 Google OAuth redirect URI: ${redirectUri}`);
     
     this.oauth2Client = new google.auth.OAuth2(
       GOOGLE_CLIENT_ID,
@@ -45,6 +49,8 @@ class GoogleOAuthProvider implements OAuthProvider {
     if (hasRealCredentials) {
       this.isConfigured = true;
       console.log('Gmail OAuth integration enabled with real credentials');
+      console.log('⚠️  Ensure this redirect URI is configured in Google Cloud Console:');
+      console.log(`   ${redirectUri}`);
     } else {
       this.isConfigured = false;
       console.log('Gmail OAuth integration disabled - using development defaults. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET for production use.');
