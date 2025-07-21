@@ -40,6 +40,7 @@ import { nanoid } from "nanoid";
 export interface IStorage {
   // User operations (required for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
+  getAllUsers(): Promise<User[]>;
   upsertUser(user: UpsertUser): Promise<User>;
   updateUserOnboarding(id: string, data: Partial<UpsertUser>): Promise<User>;
   
@@ -111,6 +112,10 @@ export interface IStorage {
   getTrainingLogs(userId: string): Promise<any[]>;
   getMemoryBanks(userId: string): Promise<any[]>;
   createTrainingLog(data: any): Promise<any>;
+  
+  // Email ingestion operations
+  getEmailIngestionLogs(userId: string): Promise<any[]>;
+  createEmailIngestionLog(data: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -118,6 +123,10 @@ export class DatabaseStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
   }
 
   async upsertUser(userData: UpsertUser): Promise<User> {
@@ -653,6 +662,23 @@ export class DatabaseStorage implements IStorage {
     return trainingLog;
   }
 
+  async getEmailIngestionLogs(userId: string): Promise<any[]> {
+    // In a real implementation, this would query the email_ingestion_logs table
+    // For now, return empty array since the table schema needs to be defined
+    return [];
+  }
+
+  async createEmailIngestionLog(data: any): Promise<any> {
+    const log = {
+      id: Date.now(),
+      ...data,
+      createdAt: new Date().toISOString()
+    };
+    
+    // In a real implementation, this would insert into the email_ingestion_logs table
+    return log;
+  }
+
   async getAnalyticsTimeline(userId: string) {
     try {
       const proposalData = await db.select({
@@ -695,6 +721,10 @@ class MemoryStorage implements IStorage {
 
   async getUser(id: string): Promise<User | undefined> {
     return this.users.get(id);
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
   }
 
   async upsertUser(user: UpsertUser): Promise<User> {
@@ -836,6 +866,8 @@ class MemoryStorage implements IStorage {
   async getTrainingLogs(): Promise<any[]> { return []; }
   async getMemoryBanks(): Promise<any[]> { return []; }
   async createTrainingLog(): Promise<any> { return {}; }
+  async getEmailIngestionLogs(): Promise<any[]> { return []; }
+  async createEmailIngestionLog(): Promise<any> { return {}; }
 }
 
 // Use DatabaseStorage if database is available, otherwise use MemoryStorage

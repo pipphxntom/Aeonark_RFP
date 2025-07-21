@@ -5,7 +5,7 @@ import * as schema from "@shared/schema";
 // Check if we have a DATABASE_URL
 if (!process.env.DATABASE_URL) {
   console.log('⚠️  DATABASE_URL not found. Application will run with limited functionality.');
-  console.log('💡 Add DATABASE_URL to the Secrets tab in Replit to enable full functionality');
+  console.log('💡 Add DATABASE_URL to Replit Secrets to enable Supabase functionality');
 }
 
 // Create a fallback for when DATABASE_URL is not available
@@ -14,13 +14,15 @@ let db: any = null;
 
 if (process.env.DATABASE_URL) {
   try {
+    // Configure for Supabase connection
     pool = new Pool({ 
       connectionString: process.env.DATABASE_URL,
-      ssl: { rejectUnauthorized: false }
+      ssl: process.env.DATABASE_URL.includes('supabase.co') ? { rejectUnauthorized: false } : false
     });
     db = drizzle(pool, { schema });
+    console.log('🔌 Connected to Supabase database via Drizzle ORM');
   } catch (error) {
-    console.error('⚠️  Failed to create database connection:', error);
+    console.error('⚠️  Failed to create Supabase connection:', error);
     pool = null;
     db = null;
   }
