@@ -25,12 +25,18 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
 
 
 
-  const { data: smartMatch, isLoading: isLoadingMatch } = useQuery({
+  const { data: smartMatch, isLoading: isLoadingMatch, refetch } = useQuery({
     queryKey: ['/api/rfps', selectedRfpId, 'smartmatch'],
-    enabled: !!selectedRfpId && analysisComplete,
+    enabled: !!selectedRfpId,
     queryFn: async () => {
       const response = await fetch(`/api/rfps/${selectedRfpId}/smartmatch`);
-      if (!response.ok) throw new Error('Failed to fetch analysis');
+      if (!response.ok) {
+        // If no analysis exists yet, return null instead of throwing
+        if (response.status === 404) {
+          return null;
+        }
+        throw new Error('Failed to fetch analysis');
+      }
       const data = await response.json();
       
       // Transform data to match new format
@@ -86,6 +92,8 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
     onSuccess: (data) => {
       console.log('Analysis successful:', data);
       setAnalysisComplete(true);
+      // Refetch the smartmatch data immediately after analysis completes
+      refetch();
       toast({
         title: "Analysis Complete",
         description: "SmartMatch analysis has been completed successfully.",
@@ -231,7 +239,7 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
               <div className="text-center">
                 <Button
                   onClick={handleAnalyze}
-                  disabled={analyzeMutation.isPending}
+                  disabled={analyzeMutation.isPending || isLoadingMatch}
                   className="bg-neon-green text-black px-8 py-3 rounded-lg font-bold hover:animate-glow transition-all duration-300 transform hover:scale-105"
                   size="lg"
                 >
@@ -239,6 +247,11 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
                     <>
                       <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2" />
                       Analyzing Compatibility...
+                    </>
+                  ) : isLoadingMatch && analysisComplete ? (
+                    <>
+                      <div className="animate-spin w-5 h-5 border-2 border-black border-t-transparent rounded-full mr-2" />
+                      Loading Results...
                     </>
                   ) : (
                     'Start SmartMatch Analysis'
@@ -250,7 +263,7 @@ export function SmartMatch({ onClose, onAnalysisComplete, rfps }: SmartMatchProp
         )}
 
         {/* Analysis Results */}
-        {analysisComplete && smartMatch && (
+        {smartMatch && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}

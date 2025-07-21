@@ -355,22 +355,36 @@ export class GmailService {
       // For now, process the first RFP attachment
       const primaryAttachment = rfpAttachments[0];
       
-      // Create RFP record
+      // Save attachment to filesystem first 
+      const fs = require('fs').promises;
+      const path = require('path');
+      
+      // Create uploads directory if it doesn't exist
+      const uploadsDir = path.join(process.cwd(), 'uploads');
+      try {
+        await fs.access(uploadsDir);
+      } catch {
+        await fs.mkdir(uploadsDir, { recursive: true });
+      }
+      
+      // Save the attachment file
+      const timestamp = Date.now();
+      const sanitizedFilename = primaryAttachment.filename.replace(/[^a-zA-Z0-9.-]/g, '_');
+      const savedFileName = `gmail_${timestamp}_${sanitizedFilename}`;
+      const filePath = path.join(uploadsDir, savedFileName);
+      
+      await fs.writeFile(filePath, primaryAttachment.data);
+      
+      // Create RFP record with proper file_url
       const rfpData = {
         userId,
         title: `${message.subject} - ${primaryAttachment.filename}`,
+        description: `RFP document imported from Gmail: ${message.senderEmail}`,
         fileName: primaryAttachment.filename,
+        fileUrl: `/uploads/${savedFileName}`, // Required field
         fileSize: primaryAttachment.size,
         extractedText: message.body,
-        documentType: 'RFP Email',
-        status: "uploaded" as const,
-        metadata: {
-          source: 'gmail',
-          messageId: messageId,
-          sender: message.senderEmail,
-          attachmentCount: rfpAttachments.length,
-          processedAt: new Date().toISOString()
-        }
+        status: "uploaded" as const
       };
 
       const rfp = await storage.createRfp(rfpData);

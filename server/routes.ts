@@ -934,7 +934,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { gmailService } = await import('./services/gmailService');
       
       const rfp = await gmailService.createRfpFromEmail(userId, messageId);
-      res.json(rfp);
+      console.log('✅ RFP created successfully from email:', rfp.id);
+      res.json({ 
+        success: true, 
+        rfp,
+        message: "RFP created successfully from email attachment" 
+      });
     } catch (error) {
       console.error("Error creating RFP from email:", error);
       res.status(500).json({ message: "Failed to create RFP from email" });
