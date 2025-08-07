@@ -17,8 +17,8 @@ import NotFound from "@/pages/not-found";
 function Router() {
   const { isAuthenticated, isLoading: authLoading, user } = useAuth();
   const { isLoading: pageLoading, isReady } = usePageLoader({ 
-    minLoadTime: 2000, 
-    dependencies: [isAuthenticated] 
+    minLoadTime: 1000, 
+    dependencies: [!authLoading] 
   });
 
   const showLoadingScreen = authLoading || pageLoading;
