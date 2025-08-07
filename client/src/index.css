@@ -1,0 +1,310 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+@import 'aos/dist/aos.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'SF Pro Display';
+  font-weight: 100 200 300 400 500 600 700 800 900;
+  font-style: normal;
+  src: local('SF Pro Display'), 
+       local('San Francisco Pro Display'),
+       local('-apple-system'),
+       url('https://sf.abarba.me/SF-Pro-Display-Medium.otf') format('opentype');
+}
+
+@font-face {
+  font-family: 'SF Mono';
+  font-weight: 100 200 300 400 500 600 700 800 900;
+  font-style: normal;
+  src: local('SF Mono'), 
+       local('San Francisco Mono'),
+       local('Monaco'),
+       url('https://sf.abarba.me/SF-Mono-Regular.otf') format('opentype');
+}
+
+:root {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+  --radius: 0.5rem;
+  
+  /* Custom color variables for the futuristic theme */
+  --neon-green: hsl(145, 100%, 50%);
+  --neon-cyan: hsl(187, 100%, 50%);
+  --deep-black: hsl(0, 0%, 4%);
+  --dark-gray: hsl(0, 0%, 10%);
+  --space-gray: hsl(240, 3.7%, 15.9%);
+}
+
+.dark {
+  --background: hsl(240, 10%, 3.9%);
+  --foreground: hsl(0, 0%, 98%);
+  --muted: hsl(240, 3.7%, 15.9%);
+  --muted-foreground: hsl(240, 5%, 64.9%);
+  --popover: hsl(240, 10%, 3.9%);
+  --popover-foreground: hsl(0, 0%, 98%);
+  --card: hsl(240, 10%, 3.9%);
+  --card-foreground: hsl(0, 0%, 98%);
+  --border: hsl(240, 3.7%, 15.9%);
+  --input: hsl(240, 3.7%, 15.9%);
+  --primary: hsl(207, 90%, 54%);
+  --primary-foreground: hsl(211, 100%, 99%);
+  --secondary: hsl(240, 3.7%, 15.9%);
+  --secondary-foreground: hsl(0, 0%, 98%);
+  --accent: hsl(240, 3.7%, 15.9%);
+  --accent-foreground: hsl(0, 0%, 98%);
+  --destructive: hsl(0, 62.8%, 30.6%);
+  --destructive-foreground: hsl(0, 0%, 98%);
+  --ring: hsl(240, 4.9%, 83.9%);
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply antialiased bg-deep-black text-foreground;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-sf-pro {
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+  }
+  
+  .font-sf-mono {
+    font-family: 'SF Mono', Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  }
+  
+  .bg-deep-black {
+    background-color: var(--deep-black);
+  }
+  
+  .bg-dark-gray {
+    background-color: var(--dark-gray);
+  }
+  
+  .text-neon-green {
+    color: var(--neon-green);
+  }
+  
+  .text-neon-cyan {
+    color: var(--neon-cyan);
+  }
+  
+  .border-neon-green {
+    border-color: var(--neon-green);
+  }
+  
+  .border-neon-cyan {
+    border-color: var(--neon-cyan);
+  }
+  
+  .bg-neon-green {
+    background-color: var(--neon-green);
+  }
+  
+  .bg-neon-cyan {
+    background-color: var(--neon-cyan);
+  }
+  
+  .neon-border {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), inset 0 0 20px rgba(0, 255, 136, 0.1);
+    border: 1px solid rgba(0, 255, 136, 0.5);
+  }
+  
+  .neon-border-cyan {
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.3), inset 0 0 20px rgba(0, 212, 255, 0.1);
+    border: 1px solid rgba(0, 212, 255, 0.5);
+  }
+  
+  .glass-morphism {
+    backdrop-filter: blur(16px) saturate(180%);
+    background-color: rgba(26, 26, 26, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.125);
+  }
+  
+  .terminal-cursor::after {
+    content: '';
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background-color: var(--neon-green);
+    margin-left: 2px;
+    animation: blink 1s infinite;
+  }
+  
+  .progress-glow {
+    box-shadow: 0 0 15px var(--neon-green);
+  }
+  
+  .space-grid {
+    background-image: 
+      linear-gradient(rgba(0, 255, 136, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 136, 0.1) 1px, transparent 1px);
+    background-size: 20px 20px;
+  }
+}
+
+@keyframes typing {
+  from { width: 0; }
+  to { width: 100%; }
+}
+
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+@keyframes glow {
+  from { box-shadow: 0 0 20px var(--neon-green); }
+  to { box-shadow: 0 0 40px var(--neon-green), 0 0 60px var(--neon-green); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes scroll-left {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(-100%); }
+}
+
+@keyframes spin-cube {
+  0% { transform: rotateX(0deg) rotateY(0deg); }
+  100% { transform: rotateX(360deg) rotateY(360deg); }
+}
+
+.animate-typing {
+  animation: typing 3.5s steps(40, end);
+}
+
+.animate-blink {
+  animation: blink 0.75s step-end infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite alternate;
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-spin-cube {
+  animation: spin-cube 2s linear infinite;
+}
+
+.animate-scroll-left {
+  animation: scroll-left 30s linear infinite;
+}
+
+/* Particle effects */
+.particles {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.particle {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* Hover effects */
+.hover-neon:hover {
+  box-shadow: 0 0 20px var(--neon-green), 0 0 40px var(--neon-green);
+  border-color: var(--neon-green);
+}
+
+.hover-neon-cyan:hover {
+  box-shadow: 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan);
+  border-color: var(--neon-cyan);
+}
+
+/* File upload area */
+.upload-zone {
+  border: 2px dashed hsl(240, 3.7%, 15.9%);
+  transition: all 0.3s ease;
+}
+
+.upload-zone:hover,
+.upload-zone.drag-over {
+  border-color: var(--neon-green);
+  background-color: rgba(0, 255, 136, 0.05);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--deep-black);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--space-gray);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-green);
+}
+
+/* New Landing Page Animations */
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-scroll {
+  animation: scroll 30s linear infinite;
+}
+
+/* Typography for Inter and Poppins */
+.font-inter {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif !important;
+}
+
+.font-poppins {
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif !important;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .animate-scroll {
+    animation-duration: 20s;
+  }
+}

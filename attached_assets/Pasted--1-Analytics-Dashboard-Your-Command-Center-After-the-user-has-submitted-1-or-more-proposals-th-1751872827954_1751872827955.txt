@@ -1,0 +1,134 @@
+📈 1. Analytics Dashboard – Your Command Center
+After the user has submitted 1 or more proposals, the system surfaces a dedicated analytics dashboard that feels like a mission control interface.
+
+🖥️ Dashboard UI Design:
+Section	Visual Element	Data Tracked
+🧭 Overview Cards	Neon-glow stat blocks (4-column grid)	Proposals Sent, Win Rate %, Avg Score, Time Saved
+📈 Line Graph	Real-time glowing trend chart	Draft Turnaround Time by Week
+📊 Pie/Donut Graph	Radial animation spin on load	RFPs by Industry / Outcome
+🔁 Win Funnel	Smooth step flow: Upload → Draft → Sent → Won	Lead conversion visualization
+💬 Top Clause Usage	Clause cloud + frequency meter	Smart reuse heatmap
+
+🧠 Animation Effects:
+When graphs load, data lines draw in real-time with pulse on peaks
+
+Hovering shows data tooltip with animated micro-bars per metric
+
+On scroll-in, charts animate like entering an energy field
+
+📥 2. Automation: Gmail & Slack RFP Capture System
+This is where AeonRFP becomes passive, reactive, intelligent.
+
+🔐 Gmail Integration Flow:
+User clicks “Connect Gmail”
+
+OAuth pop-up → grant access
+
+App filters emails with:
+
+Subject line: contains RFP, Tender, Proposal, EOI
+
+Attachments: .pdf, .docx
+
+🤖 Once connected:
+Every 30 min, the system scans inbox
+
+New files = auto-upload + run SmartMatch
+
+Notification appears:
+
+“📩 New RFP from WorldBank detected — 91% match. Draft ready to review.”
+
+💬 Slack Integration:
+User connects channel #rfps
+
+Bot listens for file drops or keywords
+
+Auto-replies:
+
+“Hey team, I’ve scanned the new RFP — looks like a solid match. Click to generate proposal.”
+
+📦 3. Proposal Status Tracking System
+On the Drafts page, each proposal card shows a status badge:
+
+mathematica
+Copy
+Edit
+🟢 Submitted  
+🔄 In Draft  
+🔵 Under Review  
+🟠 Awaiting Approval  
+🔴 Rejected  
+🏆 Won  
+Click = full timeline view:
+Timestamp	Event
+July 10, 09:33 AM	RFP Uploaded
+July 10, 09:40 AM	Draft Generated
+July 10, 10:05 AM	Edited by John
+July 10, 10:35 AM	Submitted to xyz@client.com
+July 13, 12:00 PM	Status: Won
+
+🧭 4. Navigation Panel (Fixed Left Sidebar)
+Minimalist. Neon lined. Always accessible.
+
+Icon	Label	On Click Behavior
+📊	Dashboard	Loads overview + graph modules (single-page)
+📁	Upload RFP	Opens drag-drop modal overlay or file browser
+✍️	Drafts	Shows grid view of AI proposals (click to edit)
+💾	Templates	Displays user-uploaded DOCX + mapped fields
+🧠	Memory Engine	Opens clause/history UI with search + filter
+🔍	SmartMatch Logs	Detailed past scoring + match explanations
+⚙️	Settings	Profile, integrations, API keys
+
+Hover Animations:
+Icon enlarges slightly, emits light trail
+
+Label appears with a short slide-in tag
+
+Active section glows with electric green indicator
+
+📧 5. Proposal Sharing & External Preview
+Every draft has a “🔗 Share Preview” button
+
+Generates a secure preview link with read-only access
+
+User can toggle:
+
+✅ Allow Comments
+
+❌ Disable Download
+
+Presentation:
+Preview link opens in branded proposal viewer:
+
+PDF-style scroll
+
+Company logo header
+
+Feedback pinning (like Figma)
+
+🔒 6. Security & Admin Controls
+Feature	Behavior
+Role-based access	Owner, Editor, Reviewer, Viewer roles
+Activity log	Timestamped audit trail of all changes
+Tokenized access	Secure URL expiry + API keys for external syncs
+Auto-deletion policy	“Delete drafts older than 30 days” (unless pinned)
+Revoke OAuth	Manage linked Gmail/Slack apps from settings panel
+
+🎯 Final Call-To-Actions
+At the end of every major flow (e.g. after exporting, scoring, connecting email), users are presented with "Next Best Actions":
+
+Scenario	CTA Options
+Proposal exported	→ Submit via email
+
+pgsql
+Copy
+Edit
+                            | → Share with team  
+| SmartMatch done | → Start Draft
+| → Archive RFP
+| Slack/Gmail connected | → View Incoming Queue
+| → Set Filter Rules
+
+🧠 What the User Feels in Part D:
+“This isn't just automation — this is intelligence in motion. My RFPs come to me. My dashboard tells me where to go next. I don't manage proposals anymore — I deploy them.”

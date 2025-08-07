@@ -1,0 +1,94 @@
+ 1. Convert Logo to SVG
+If you haven’t already, you need a vector (SVG) version of your logo with proper path data. Use vector tracing tools like:
+
+https://vectorizer.ai
+
+Adobe Illustrator → "Image Trace" → Export as SVG
+
+Let’s assume you've saved the traced SVG as logo.svg.
+
+✅ index.html
+html
+Copy
+Edit
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Aeonark Loader</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js"></script>
+</head>
+<body>
+  <div class="loader-container">
+    <svg id="aeonark-logo" viewBox="0 0 500 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- Replace with your actual <path> from traced SVG -->
+      <path d="M..." stroke="#00FFAA" stroke-width="4" fill="none"/>
+    </svg>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
+✅ style.css
+css
+Copy
+Edit
+body {
+  margin: 0;
+  background: #000;
+  overflow-x: hidden;
+}
+
+.loader-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200vh; /* scrollable space to trigger animation */
+}
+
+svg {
+  width: 300px;
+  height: auto;
+}
+✅ script.js
+javascript
+Copy
+Edit
+// Anime.js Stroke Scroll Animation
+const path = document.querySelector('path');
+const pathLength = path.getTotalLength();
+
+path.setAttribute('stroke-dasharray', pathLength);
+path.setAttribute('stroke-dashoffset', pathLength);
+
+// Scroll-triggered animation
+window.addEventListener('scroll', () => {
+  const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+  const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+  const scrollPercent = scrollTop / scrollHeight;
+
+  const drawLength = pathLength * scrollPercent;
+  path.setAttribute('stroke-dashoffset', pathLength - drawLength);
+});
+🧠 What Happens
+You trace the SVG logo into a path.
+
+stroke-dasharray + stroke-dashoffset creates a "draw-on-scroll" effect.
+
+As the user scrolls down the page, the logo gradually draws itself.
+
+Optional (Autoplay Without Scroll)
+If you want the animation to auto-play (like a loading screen), replace script.js with:
+
+javascript
+Copy
+Edit
+anime({
+  targets: 'path',
+  strokeDashoffset: [anime.setDashoffset, 0],
+  easing: 'easeInOutSine',
+  duration: 2500,
+  direction: 'normal',
+  loop: false
+});

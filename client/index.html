@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>AeonRFP - AI-Powered Proposal Generation</title>
+    <meta name="description" content="Generate winning proposals with AI-powered RFP analysis. AeonRFP helps you create professional proposals faster with smart matching and automated content generation." />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon.svg" />
+    <meta property="og:title" content="AeonRFP - AI-Powered Proposal Generation" />
+    <meta property="og:description" content="Generate winning proposals with AI-powered RFP analysis. Smart matching and automated content generation." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="AeonRFP - AI-Powered Proposal Generation" />
+    <meta name="twitter:description" content="Generate winning proposals with AI-powered RFP analysis. Smart matching and automated content generation." />
+  </head>
+  <body class="bg-black">
+    <div id="root">
+      <!-- Initial loading screen while React loads -->
+      <div id="initial-loader" class="fixed inset-0 bg-black z-50 flex items-center justify-center">
+        <div class="flex flex-col items-center space-y-6">
+          <!-- Simple CSS-only spinner until React loads -->
+          <div class="w-16 h-16 border-2 border-gray-700 border-t-green-400 rounded-full animate-spin"></div>
+          <div class="text-green-400 font-semibold">Loading AeonRFP...</div>
+        </div>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
+    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
+    
+    <!-- Hide initial loader once React takes over -->
+    <script>
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          const loader = document.getElementById('initial-loader');
+          if (loader) {
+            loader.style.display = 'none';
+          }
+        }, 100);
+      });
+    </script>
+  </body>
+</html>

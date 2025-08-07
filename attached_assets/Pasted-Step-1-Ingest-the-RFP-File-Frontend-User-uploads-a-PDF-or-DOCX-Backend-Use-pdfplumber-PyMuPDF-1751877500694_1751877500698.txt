@@ -1,0 +1,161 @@
+Step 1: Ingest the RFP File
+Frontend:
+
+User uploads a PDF or DOCX
+
+Backend:
+
+Use pdfplumber, PyMuPDF, or docx2txt to extract clean text
+
+Store the cleaned text in a variable like rfp_text
+
+Step 2: Chunk & Embed RFP
+Split rfp_text into manageable blocks (300–500 tokens)
+
+Use OpenAI’s text-embedding-ada-002 or DeepSeek Embedding API
+
+Store embeddings in FAISS or Chroma DB
+
+python
+Copy
+Edit
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+
+text_splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+rfp_chunks = text_splitter.split_text(rfp_text)
+
+embedding = OpenAIEmbeddings()
+vectorstore = FAISS.from_texts(rfp_chunks, embedding)
+Step 3: Compare Against User Profile
+The system has embedded:
+
+User’s uploaded company info / pitch deck / previous proposals
+
+Their services (from onboarding)
+
+Their preferred project size, timeline, certifications
+
+These are also stored as embeddings (user_vectorstore).
+
+You now perform a semantic similarity search:
+
+python
+Copy
+Edit
+matches = vectorstore.similarity_search_with_score(query=user_services_text, k=10)
+Step 4: Define Match Score Dimensions
+SmartMatch score is not one number — it’s an aggregation of multiple weighted metrics:
+
+Dimension	Description	Weight
+Service Match	Does RFP ask for what the company offers?	35%
+Industry Match	Does RFP belong to a familiar vertical?	15%
+Timeline Alignment	Is delivery deadline doable based on past work?	10%
+Certifications	Does RFP require SOC2, ISO, NDA, etc.?	15%
+Value Range	Budget vs. typical project value	10%
+Past Win Similarity	Similar to any won proposals?	15%
+
+Step 5: Score Aggregation Logic
+Each component scores from 0–100.
+
+Combine via weighted average:
+
+python
+Copy
+Edit
+final_score = (
+    service_score * 0.35 +
+    industry_score * 0.15 +
+    timeline_score * 0.10 +
+    cert_score * 0.15 +
+    value_score * 0.10 +
+    past_win_score * 0.15
+)
+Return final_score to frontend + JSON breakdown.
+
+Step 6: Show SmartMatch to User (Frontend)
+Send JSON to frontend:
+
+json
+Copy
+Edit
+{
+  "score": 84,
+  "breakdown": {
+    "Service Match": 92,
+    "Industry Match": 80,
+    "Timeline": 60,
+    "Certifications": 40,
+    "Value": 95,
+    "Past Wins": 87
+  },
+  "verdict": "High Fit"
+}
+Render:
+
+Circular score gauge
+
+Breakdown cards
+
+Match meter (Low–Medium–High–Strong)
+
+🧠 ADVANCED: How Each Sub-score is Calculated
+✅ 1. Service Match (35%)
+Compare the RFP service requirements to user-offered services via semantic match (not keyword)
+
+Use LLM like:
+
+“Does this RFP require mobile development, data security or analytics platforms?”
+
+Score based on % of match
+
+✅ 2. Industry Match (15%)
+User profile has “SaaS”, “Legal”, “Healthcare”
+
+Use LLM classifier:
+
+“What industry does this RFP belong to?”
+
+Use embeddings to compare RFP phrases to industry keywords
+
+Soft match logic (e.g. "MedTech" = "Healthcare")
+
+✅ 3. Timeline Fit (10%)
+Extract deadline from RFP (LLM or regex on due by, submission deadline)
+
+Compare with user's average proposal build cycle (X days)
+
+Use delta to generate score (closer = better)
+
+✅ 4. Certifications (15%)
+LLM scans for phrases like:
+
+“must be SOC2 compliant”
+
+“require ISO 27001 certification”
+
+Match against user profile:
+
+user_certifications = ['SOC2', 'HIPAA']
+
+✅ 5. Budget Fit (10%)
+Extract budget if present
+
+Check if falls in company’s preferred range (min_price, max_price)
+
+If budget absent, assign neutral score (e.g. 50)
+
+✅ 6. Past Win Similarity (15%)
+Vector search for similarity against WON proposals in company’s memory
+
+Use FAISS cosine similarity (above 0.7 = strong)
+
+Score scaled based on match depth
+
+🧪 Bonus Enhancements:
+Explainability: Why did this RFP score low? → Show reason cards
+
+Filter: Let users only view “Score > 75%” RFPs
+
+Auto-recommend template based on top past win

@@ -1,0 +1,44 @@
+uild a visually striking scroll-driven animation for the Aeonark Labs loading screen, where a circular techno-ring logo (provided as a complex SVG path) is progressively revealed stroke-by-stroke as the user scrolls. The animation should evoke a futuristic, cybernetic loading interface — elegant, high-tech, and minimal.
+
+The visual effect must simulate a stroke-drawing animation where each segment of the logo's SVG path appears to be "etched" in real time, as if drawn by an AI. This animation should be synchronized with the user’s scroll movement using Motion One (or similar Web Animations API) to offer a high-performance experience. The animation should not loop, but rather play once per scroll session, starting from the top offset of the scroll trigger section and completing by the time the user scrolls past the defined scroll window.
+
+🖼️ Visual/Stylistic Guidelines:
+Background: Solid black #000000
+
+Logo Style: Neon green #00FFAA stroke, stroke-width: 12px, fill: none
+
+SVG Sizing: Responsive — width: 300px, centered and scaled for mobile & desktop
+
+Positioning: Use a scroll container (div.scroll-trigger) with 200vh of padding above and below for scroll control. The SVG remains sticky during scroll to focus user attention.
+
+Animation Style: Use stroke-dasharray and stroke-dashoffset in the path animation to simulate a path being drawn dynamically.
+
+Ease: Use a subtle custom easing (inOut(3) or cubic-bezier variant) to give a slightly cinematic feel.
+
+Scroll Sync: The animation progress should map to scroll progress linearly from 0 to 1 (scrollYProgress style).
+
+🧱 Structure:
+index.html:
+
+Includes the SVG inline or embedded from aeonark_logo.svg
+
+Includes a scroll container and sticky wrapper
+
+style.css:
+
+Sets full-page dark styling, centers the SVG, sticky positioning
+
+Adds top and bottom scroll spacer sections (200vh)
+
+script.js:
+
+Uses Motion One or GSAP ScrollTrigger to bind scroll progress to SVG stroke animation
+
+Optional: Prevent animation from repeating after one complete pass
+
+🔧 Optional Advanced Touches:
+Add subtle glow or blur effect behind the path during animation (filter: drop-shadow(...))
+
+Show a "writing with light" effect by animating a glowing tip along the stroke
+
+Enable fallback to autoplay on mobile devices where scroll sync isn’t smooth

@@ -1,0 +1,85 @@
+Large bold heading:
+
+text
+Copy
+Edit
+AI that Wins RFPs. At 10x Speed.
+Subtext: “Transform RFP responses from weeks to hours with AI-powered proposal automation”
+
+CTA Button (neon gradient): Sign Up Free – Automate Proposals with AI
+
+Floating company logos (e.g., CloudNest, DataSphere) slowly scrolling from right to left, using a smooth horizontal loop animation.
+
+🚀 PART 2 – “Win More Than Just Business” Section:
+Use scroll-based animations here (like AOS or Framer Motion):
+
+For each feature block:
+
+Fade-up + Slide-up animation as user scrolls
+
+Feature title (bold, 28px+)
+
+Small subheading (gray, 16px)
+
+Image on the right side comes in with 300ms delay (fade-in + slight left-to-right movement)
+
+When user scrolls further:
+
+Previous block fades out slowly
+
+Next block fades/scrolls in
+
+Sample features to add:
+
+📁 Organized Proposal Memory – Your team never repeats answers again.
+
+⚡ Lightning Speed – Respond in hours, not weeks.
+
+🤖 AI-Powered Responses – Custom LLMs understand your exact voice and language.
+
+🔒 Private & Secure – Enterprise-grade encryption and access control.
+
+🔗 Seamless Integration – Plug into Google Drive, Notion, Slack, Salesforce, etc.
+
+Use subtle dividers or parallax lines to make it futuristic.
+
+📘 PART 3 – “Latest from AeonRFP” Section:
+Section Title: Latest from AeonRFP
+
+Grid-style layout with button-style article cards (4 across on desktop, 1–2 on mobile)
+
+Each button has:
+
+Title (e.g., “The Future of AI & RFPs”)
+
+Tagline or Date
+
+Hover animation (lift + glow effect)
+
+On click: Open a dedicated blog post page
+
+Blog post cards:
+Look like elevated glassmorphic buttons
+
+Use react-router-dom or equivalent to handle internal routing
+
+Each post opens on a clean page with:
+
+Blog header
+
+Content blocks (paragraphs, images, links)
+
+Back button
+
+📦 Tech Stack:
+Use React.js or Next.js
+
+Use framer-motion or AOS for animations
+
+Responsive design (Flexbox or Grid)
+
+TailwindCSS preferred for styling
+
+Host on Replit or Vercel
+
+✅ At the end, the whole experience should feel immersive, fast, futuristic, and alive.

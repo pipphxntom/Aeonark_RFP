@@ -1,0 +1,166 @@
+✍️ 1. AI Proposal Editor UI
+Once the proposal is drafted (from Part B), the user enters the Editor Workspace.
+
+🎨 Layout Overview:
+Section	Description
+Left Sidebar	Navigation between proposal sections
+Center Panel	Rich text editor – AI-drafted content loaded per block
+Right Sidebar	Company memory suggestions, clause drag-and-drop panel
+Top Bar	Breadcrumbs + Save/Export/Share buttons
+
+✨ Animations & Transitions:
+Each section loads with slide-up + glow-in transition.
+
+Section titles have glowing underlines on scroll.
+
+Typing or editing text creates subtle neon ripples behind the cursor (light but futuristic).
+
+💡 Proposal Blocks Example:
+css
+Copy
+Edit
+[ Executive Summary ]        ✅ Done
+[ Scope of Work ]            ✏️ Editing
+[ Deliverables ]             ⏳ Pending Review
+[ Pricing Table ]            ✅ Saved
+[ Legal Terms ]              ❌ Needs Action
+Hovering over a block:
+
+Option panel appears:
+
+🔁 Regenerate | ✏️ Edit | 💾 Save | ❌ Clear
+
+When you regenerate:
+
+Animated wave washes over the section (like a "rewrite in progress" effect)
+
+🧠 2. Memory Engine: Clause Reuse & AI Retrieval
+Right Sidebar — “Company Memory Engine”
+Live Suggestions Panel:
+
+Title: Suggested Reuse from Past Wins
+
+Each clause block slides in from right:
+
+💬 “Used in Deloitte Proposal (Won)”
+
+💬 “Matches 87% with current SOW language”
+
+You can:
+
+🔄 Inject into current draft (animation: flash + appear in editor)
+
+✏️ Edit and re-save into memory
+
+📌 Pin for current project
+
+🧱 Memory Engine Behind the Scenes:
+Pulls data from:
+
+Past submitted proposals
+
+Uploaded pitch decks
+
+Stored bios/clauses in company profile
+
+Stored in Vector DB (Chroma or FAISS) with tags:
+
+type: 'legal_clause', project: 'FintechRFP2023', tone: 'formal'
+
+When the AI drafts a section, these are auto-injected as RAG context → better drafts, familiar voice.
+
+📄 3. Export System – Template Fill + Branded Output
+Once the proposal is finalized:
+
+User Clicks: Export Proposal
+Triggers glowing modal with options:
+
+mathematica
+Copy
+Edit
+Choose Export Format:
+[📄 DOCX (Branded Template)]  
+[📄 PDF (Formatted Layout)]  
+[👁 Preview First]
+Animation:
+
+Each format tile pulses gently on hover
+
+Click causes the selected tile to zoom out briefly as if being pulled into a generator
+
+💼 Branded Template Logic:
+If the user uploaded their .docx template earlier, AeonRFP:
+
+Maps fields like {{client_name}}, {{project_scope}}, {{pricing}}
+
+Fills them with AI-generated content
+
+Backend uses:
+
+docxtpl to fill Word template
+
+WeasyPrint or Puppeteer to render PDF
+
+🧪 Preview Mode (Live Flipbook UI):
+3D flipbook animation appears
+
+User can flip through rendered pages
+
+Glowing "Download PDF" button below
+
+Option: “Send to Client Email Now” (uses SendGrid or Mailgun)
+
+🤝 4. Real-Time Collaboration (Team Draft Mode)
+Feature Activation: Available on Growth Plan+
+Invite collaborators:
+
+Add emails → assign sections
+
+Editor role: can write/edit
+
+Viewer role: can comment only
+
+UX Flow:
+
+Comments appear inline like Google Docs
+
+Hovering shows “typing” indicator for active collaborators
+
+Autosaves every 10 seconds
+
+“Last edited by [name] · 3 mins ago” appears top-right
+
+🔐 5. Security & File Protection (During Draft & Export)
+Feature	Behavior
+File Encryption	Stored RFPs & drafts encrypted with AES-256
+Auto File Deletion	Temp drafts deleted after X days unless pinned
+Access Control	Role-based team access: Owner, Editor, Viewer
+Export Logs	Tracks export time, file size, format, user who triggered
+
+🌈 6. UI Theme & Visual Consistency
+Colors:
+
+Background: Deep navy → black
+
+Accents: Neon cyan, green, violet
+
+Text: Bright white + light grey body
+
+Hover effects: subtle glows, magnetic pulls, and button push-in shadows
+
+Fonts:
+
+Headers: Inter / Montserrat Bold
+
+Body: Inter / Roboto
+
+Monospaced AI cues: JetBrains Mono
+
+🧠 What the User Feels at This Stage:
+"I didn’t just write a proposal… my company cloned its brain into this document — 10x faster, and 2x better."
+
+🔚 At Bottom of Editor:
+🎯 Proposal Complete. Ready to Win.
+→ [ Download PDF ]
+→ [ Submit to Client ]
+→ [ Save Template for Next Time ]
